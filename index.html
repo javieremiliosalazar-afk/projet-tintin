@@ -44,17 +44,34 @@
         scene.add(light);
 
         // CHARGEMENT DU MODÈLE
-        const loader = new GLTFLoader();
-        loader.load('assets/model2.glb', function (gltf) {
-            const model = gltf.scene;
-            
-            // CONSEIL AR : Les modèles sont souvent trop grands. 
-            // On les réduit pour qu'ils tiennent sur une table.
-            model.scale.set(0.2, 0.2, 0.2); 
-            model.position.set(0, 0, -1); // Placé à 1 mètre devant l'utilisateur
-            
-            scene.add(model);
-        });
+loader.load('assets/model2.glb', function (gltf) {
+    const model = gltf.scene;
+    
+    // Alerte pour confirmer que le fichier est bien trouvé par le téléphone
+    console.log("Modèle chargé !"); 
+
+    // Rendre le modèle translucide comme tu voulais
+    model.traverse((child) => {
+        if (child.isMesh) {
+            child.material.transparent = true;
+            child.material.opacity = 0.5;
+        }
+    });
+
+    // Échelle : Si le perso fait 1m dans Blender, 0.2 le rend minuscule (20cm).
+    // Teste avec 1, 1, 1 pour voir s'il apparaît enfin.
+    model.scale.set(1, 1, 1); 
+    model.position.set(0, 0, -2); // 2 mètres devant
+    
+    scene.add(model);
+}, 
+// Fonction de progression (optionnel)
+undefined, 
+// Fonction d'erreur : TRÈS IMPORTANT
+function (error) {
+    console.error("Erreur de chargement :", error);
+    alert("Erreur de chargement du GLB : " + error.message);
+});
 
         // BOUCLE D'ANIMATION
         renderer.setAnimationLoop(function () {
