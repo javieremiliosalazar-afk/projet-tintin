@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Modèle en VR - Three.js</title>
+    <title>Mon Modèle en AR - Three.js</title>
     <style>
-        body { margin: 0; background-color: #111; }
+        body { margin: 0; }
         canvas { display: block; }
     </style>
 </head>
@@ -23,62 +23,41 @@
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { VRButton } from 'three/addons/webxr/VRButton.js'; // AJOUTÉ : Import du bouton VR
+        import { ARButton } from 'three/addons/webxr/ARButton.js'; // CHANGÉ : ARButton
 
-        // --- CONFIGURATION DE BASE ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x333333);
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        // Position de la caméra à hauteur d'homme (environ 1.6m) pour la VR
-        camera.position.set(0, 1.6, 3); 
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        // MODIFIÉ : alpha: true pour voir la caméra derrière le modèle
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        
-        // AJOUTÉ : Activer le support WebXR
+        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.xr.enabled = true; 
-        
         document.body.appendChild(renderer.domElement);
 
-        // AJOUTÉ : Ajouter le bouton "Enter VR" sur la page
-        document.body.appendChild(VRButton.createButton(renderer));
+        // AJOUTÉ : Bouton Start AR
+        document.body.appendChild(ARButton.createButton(renderer));
 
-        // --- LUMIÈRES ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
-        scene.add(ambientLight);
+        // LUMIÈRES
+        const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+        scene.add(light);
 
-        const sunLight = new THREE.DirectionalLight(0xffffff, 2);
-        sunLight.position.set(5, 5, 5);
-        scene.add(sunLight);
-
-        // --- CONTRÔLES (Souris/Tactile pour le mode non-VR) ---
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-
-        // --- CHARGEMENT DU MODÈLE ---
+        // CHARGEMENT DU MODÈLE
         const loader = new GLTFLoader();
-
         loader.load('assets/model.glb', function (gltf) {
             const model = gltf.scene;
-            scene.add(model);
             
-            const box = new THREE.Box3().setFromObject(model);
-            const center = box.getCenter(new THREE.Vector3());
-            model.position.sub(center); 
-
-            console.log("Modèle chargé avec succès !");
-        }, undefined, function (error) {
-            console.error("Erreur lors du chargement :", error);
+            // CONSEIL AR : Les modèles sont souvent trop grands. 
+            // On les réduit pour qu'ils tiennent sur une table.
+            model.scale.set(0.2, 0.2, 0.2); 
+            model.position.set(0, 0, -1); // Placé à 1 mètre devant l'utilisateur
+            
+            scene.add(model);
         });
 
-        // --- BOUCLE D'ANIMATION (MODIFIÉE POUR LA VR) ---
-        // En WebXR, on n'utilise plus requestAnimationFrame, 
-        // mais renderer.setAnimationLoop
+        // BOUCLE D'ANIMATION
         renderer.setAnimationLoop(function () {
-            controls.update(); // Utile uniquement en mode écran
             renderer.render(scene, camera);
         });
 
