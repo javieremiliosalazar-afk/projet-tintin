@@ -46,11 +46,8 @@
         // CHARGEMENT DU MODÈLE
 loader.load('assets/model2.glb', function (gltf) {
     const model = gltf.scene;
-    
-    // Alerte pour confirmer que le fichier est bien trouvé par le téléphone
-    console.log("Modèle chargé !"); 
 
-    // Rendre le modèle translucide comme tu voulais
+    // 1. EFFET TRANSLUCIDE
     model.traverse((child) => {
         if (child.isMesh) {
             child.material.transparent = true;
@@ -58,13 +55,24 @@ loader.load('assets/model2.glb', function (gltf) {
         }
     });
 
-    // Échelle : Si le perso fait 1m dans Blender, 0.2 le rend minuscule (20cm).
-    // Teste avec 1, 1, 1 pour voir s'il apparaît enfin.
+    // 2. POSITIONNEMENT
+    // On le place à 1.5 mètre devant toi (Z = -1.5)
+    // Et on le descend un peu (Y = -0.5) pour qu'il ne flotte pas trop haut
+    model.position.set(0, -0.5, -1.5); 
+
+    // 3. ROTATION (Pour qu'il te regarde)
+    // Math.PI correspond à 180 degrés. 
+    // Si après ça il te regarde toujours pas, essaie 0 ou Math.PI / 2
+    model.rotation.y = Math.PI; 
+
+    // 4. TAILLE
     model.scale.set(1, 1, 1); 
-    model.position.set(0, 0, -2); // 2 mètres devant
-    
+
     scene.add(model);
-}, 
+    console.log("Le personnage est apparu en face !");
+}, undefined, function(e) {
+    console.error(e);
+});
 // Fonction de progression (optionnel)
 undefined, 
 // Fonction d'erreur : TRÈS IMPORTANT
