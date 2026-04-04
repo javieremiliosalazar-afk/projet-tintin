@@ -5,6 +5,39 @@ body, html {
   width: 100%;
   height: 100%;
 }
+#VRButton {
+    /* Positionnement */
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    /* Priorité d'affichage */
+    z-index: 1000 !important;
+    
+    /* Design du bouton */
+    padding: 12px 24px !important;
+    border: 1px solid #fff !important;
+    border-radius: 4px !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    color: #fff !important;
+    font-family: sans-serif;
+    font-size: 13px !important;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    
+    /* Transition fluide */
+    transition: all 0.2s ease;
+}
+
+#VRButton:hover {
+    background: #fff !important;
+    color: #000 !important;
+    opacity: 1 !important;
+}
+
+
 
 #container {
   width: 100%;
