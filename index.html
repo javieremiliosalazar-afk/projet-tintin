@@ -2,13 +2,12 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Prototype Jeu de Piste AR</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AR Game Prototype</title>
+    <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body style="margin: 0; overflow: hidden;">
+<body>
 
     <div id="ui-container">
         
@@ -17,7 +16,7 @@
         <div id="menu-wrapper" class="ui-element">
             <button id="menu-btn" onclick="toggleMenu()">☰ Menu</button>
             <div id="menu-content" class="hidden">
-                <p>📍 Objectif : Retrouver le Totem</p>
+                <p>🎯 Chercher le signal</p>
                 <hr>
                 <button onclick="requestPermissions()">Activer Boussole</button>
             </div>
@@ -30,90 +29,91 @@
         <div id="compass-container" class="ui-element">
             <div id="compass-arrow">⬆️</div>
         </div>
-        
+
+        <div id="instruction-overlay">Scannez le sol et cliquez pour poser le personnage</div>
     </div>
 
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" cursor="fuse: false; rayOrigin: mouse">
+    <a-scene 
+        webxr="requiredFeatures: hit-test, local-floor; optionalFeatures: dom-overlay; overlayElement: #ui-container;"
+        renderer="antialias: true; alpha: true;">
         
-        <a-entity id="character" 
-                  geometry="primitive: cylinder; height: 1.5; radius: 0.5" 
-                  material="color: #FF5733; opacity: 0.8"
-                  position="0 0.75 -5">
+        <a-assets>
+            </a-assets>
+
+        <a-entity id="reticle" raycaster="objects: .none">
+            <a-ring color="#00ffcc" rotation="-90 0 0" radius-inner="0.05" radius-outer="0.08"></a-ring>
         </a-entity>
 
-        <a-box id="collectible" 
-               position="2 0.5 -3" 
-               scale="0.4 0.4 0.4" 
-               color="gold"
-               animation="property: rotation; to: 0 360 0; loop: true; dur: 3000"
-               class="clickable"
-               onclick="collectItem()">
-        </a-box>
+        <a-entity id="character" 
+                  geometry="primitive: cylinder; height: 1.2; radius: 0.4" 
+                  material="color: #FF5733; emissive: #330000"
+                  visible="false">
+            <a-circle rotation="-90 0 0" radius="0.5" material="shader: flat; color: black; opacity: 0.3" position="0 -0.59 0"></a-circle>
+        </a-entity>
 
-        <a-entity camera></a-entity>
+        <a-entity camera position="0 1.6 0"></a-entity>
     </a-scene>
 
     <script>
-        // --- LOGIQUE DE JEU ---
         let items = 0;
-        const targetCoords = { lat: 48.8584, lon: 2.2945 }; // Exemple: Tour Eiffel
+        const scene = document.querySelector('a-scene');
+        const reticle = document.querySelector('#reticle');
+        const character = document.querySelector('#character');
+        const instruction = document.querySelector('#instruction-overlay');
 
-        function collectItem() {
-            items++;
-            document.getElementById('count').innerText = items;
-            const obj = document.getElementById('collectible');
-            obj.setAttribute('visible', 'false');
-            alert("Objet récupéré ! L'IA va vous guider vers le suivant.");
-        }
+        // --- LOGIQUE DE PLACEMENT AU SOL ---
+        scene.addEventListener('enter-vr', () => {
+            if (scene.is('ar-mode')) {
+                instruction.style.display = 'block';
+            }
+        });
 
+        // Utilisation du système Hit-Test de WebXR
+        scene.addEventListener('click', (event) => {
+            if (character.getAttribute('visible') === 'false' && reticle.getAttribute('visible') === 'true') {
+                const position = reticle.getAttribute('position');
+                character.setAttribute('position', position);
+                character.setAttribute('visible', 'true');
+                instruction.style.display = 'none';
+                
+                // Animation d'apparition
+                character.setAttribute('animation', 'property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack');
+            } else {
+                // Si le perso est déjà là, on simule une collecte
+                items++;
+                document.getElementById('count').innerText = items;
+            }
+        });
+
+        // --- UI & MENUS ---
         function toggleMenu() {
             document.getElementById('menu-content').classList.toggle('hidden');
         }
 
         function startVoice() {
             const btn = document.getElementById('btn-openai');
+            btn.classList.add('listening');
             btn.innerText = "⌛ Écoute...";
-            setTimeout(() => { btn.innerText = "🎙️ Parler"; }, 3000);
-            console.log("Appel API OpenAI Whisper simulé...");
+            setTimeout(() => { 
+                btn.classList.remove('listening');
+                btn.innerText = "🎙️ Parler"; 
+            }, 3000);
         }
 
-        // --- LOGIQUE BOUSSOLE & GPS ---
-        function calculateBearing(lat1, lon1, lat2, lon2) {
-            const toRad = (v) => v * Math.PI / 180;
-            const toDeg = (v) => v * 180 / Math.PI;
-            const φ1 = toRad(lat1), φ2 = toRad(lat2);
-            const Δλ = toRad(lon2 - lon1);
-            const y = Math.sin(Δλ) * Math.cos(φ2);
-            const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-            return (toDeg(Math.atan2(y, x)) + 360) % 360;
-        }
-
-        function updateCompass() {
-            navigator.geolocation.watchPosition((position) => {
-                const userLat = position.coords.latitude;
-                const userLon = position.coords.longitude;
-                const userHeading = position.coords.heading || 0; 
-                
-                const bearing = calculateBearing(userLat, userLon, targetCoords.lat, targetCoords.lon);
-                const arrowRotation = bearing - userHeading;
-
-                document.getElementById('compass-arrow').style.transform = `rotate(${arrowRotation}deg)`;
-            }, (err) => console.log(err), { enableHighAccuracy: true });
-        }
-
-        // Gestion des permissions (Nécessaire pour iOS)
+        // --- BOUSSOLE (LOGIQUE SIMPLIFIÉE) ---
         function requestPermissions() {
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission()
-                    .then(response => {
-                        if (response == 'granted') {
-                            window.addEventListener('deviceorientation', (e) => {}, true);
-                            updateCompass();
-                        }
-                    });
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().then(res => {
+                    if (res === 'granted') window.addEventListener('deviceorientation', handleOrientation);
+                });
             } else {
-                updateCompass();
+                window.addEventListener('deviceorientation', handleOrientation);
             }
+        }
+
+        function handleOrientation(event) {
+            const heading = event.webkitCompassHeading || 360 - event.alpha;
+            document.getElementById('compass-arrow').style.transform = `rotate(${heading}deg)`;
         }
     </script>
 </body>
