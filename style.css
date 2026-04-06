@@ -1,150 +1,88 @@
-Voici le code CSS complet et optimisé.
+/* RESET */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { margin: 0; overflow: hidden; font-family: sans-serif; }
 
-J'ai ajouté des commentaires pour chaque section afin que vous puissiez ajuster les positions si nécessaire. Ce code utilise des propriétés de "Safe Area" pour s'assurer que les boutons ne soient pas cachés par l'encoche (notch) ou la barre de navigation des iPhones et Android récents.
-CSS
-
-/* 1. RÉINITIALISATION ET STRUCTURE DE BASE */
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent; /* Désactive le flash gris au clic sur mobile */
-}
-
-body, html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden; /* Empêche le défilement pendant le jeu AR */
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-}
-
-/* 2. LE CONTENEUR D'INTERFACE (OVERLAY) */
+/* CONTAINER OVERLAY */
 #ui-container {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 9999; /* Force l'affichage au-dessus de la scène AR */
-    pointer-events: none; /* Laisse passer les clics vers le monde 3D par défaut */
+    inset: 0; /* Prend tout l'écran */
+    z-index: 9999;
+    pointer-events: none; /* Laisse passer le clic vers l'AR */
+    color: white;
 }
 
-/* Style commun à tous les blocs de boutons */
 .ui-element {
     position: absolute;
-    pointer-events: auto; /* Réactive le clic sur les éléments d'interface */
-    background: rgba(15, 15, 25, 0.85); /* Fond sombre semi-transparent */
-    backdrop-filter: blur(10px); /* Effet de flou moderne sur le fond */
-    color: white;
+    pointer-events: auto; /* Active le clic sur les boutons */
+    background: rgba(20, 20, 30, 0.85);
+    backdrop-filter: blur(10px);
     border: 1px solid rgba(0, 255, 204, 0.4);
-    border-radius: 15px;
+    border-radius: 12px;
     padding: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
-/* 3. POSITIONNEMENT AUX 4 COINS */
-
-/* HAUT GAUCHE : BOUTON OPENAI */
+/* POSITIONS */
 #btn-openai {
     top: calc(20px + env(safe-area-inset-top));
     left: calc(20px + env(safe-area-inset-left));
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: bold;
     color: #00ffcc;
-    cursor: pointer;
     border: 1px solid #00ffcc;
-    transition: transform 0.1s active;
+    font-weight: bold;
 }
 
-#btn-openai:active {
-    transform: scale(0.95);
-    background: rgba(0, 255, 204, 0.2);
-}
-
-/* HAUT DROITE : MENU */
 #menu-wrapper {
     top: calc(20px + env(safe-area-inset-top));
     right: calc(20px + env(safe-area-inset-right));
-    min-width: 120px;
+    min-width: 100px;
 }
 
 #menu-btn {
-    width: 100%;
-    background: none;
-    border: none;
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background: none; border: none; color: white; cursor: pointer; font-size: 16px;
 }
 
-#menu-content {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-/* BAS GAUCHE : COMPTEUR D'OBJETS */
 #item-counter {
     bottom: calc(30px + env(safe-area-inset-bottom));
     left: calc(20px + env(safe-area-inset-left));
-    font-size: 14px;
-    letter-spacing: 0.5px;
 }
 
-#count {
-    color: #ffd700; /* Or pour le compteur */
-    font-size: 1.4em;
-    font-weight: 900;
-    margin-left: 5px;
-}
-
-/* BAS DROITE : BOUSSOLE */
 #compass-container {
     bottom: calc(30px + env(safe-area-inset-bottom));
     right: calc(20px + env(safe-area-inset-right));
-    width: 70px;
-    height: 70px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%; /* Cercle parfait */
-    border: 2px solid rgba(0, 255, 204, 0.5);
+    width: 65px; height: 65px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
 }
 
 #compass-arrow {
     font-size: 2.5rem;
-    line-height: 1;
-    display: inline-block;
-    transition: transform 0.2s ease-out; /* Rotation fluide */
+    transition: transform 0.2s ease-out;
     transform-origin: center center;
-    filter: drop-shadow(0 0 5px rgba(0, 255, 204, 0.8));
 }
 
-/* 4. ÉTATS ET UTILITAIRES */
-.hidden {
+/* INSTRUCTIONS CENTRALES */
+#instruction-overlay {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.6);
+    padding: 10px 20px;
+    border-radius: 20px;
     display: none;
+    text-align: center;
 }
 
-button {
-    font-family: inherit;
-    outline: none;
-}
+/* ANIMATIONS */
+.hidden { display: none; }
 
-/* Animation de pulsation pour le bouton OpenAI quand il "écoute" */
 .listening {
     animation: pulse 1.5s infinite;
+    background: rgba(0, 255, 204, 0.2);
 }
 
 @keyframes pulse {
     0% { box-shadow: 0 0 0 0 rgba(0, 255, 204, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(0, 255, 204, 0); }
+    70% { box-shadow: 0 0 0 12px rgba(0, 255, 204, 0); }
     100% { box-shadow: 0 0 0 0 rgba(0, 255, 204, 0); }
 }
+
+hr { border: 0.5px solid rgba(255,255,255,0.1); margin: 8px 0; }
