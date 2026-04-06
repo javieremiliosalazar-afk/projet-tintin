@@ -1,42 +1,93 @@
-/* Supprime les marges par défaut du navigateur */
-margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden; /* Empêche le défilement (scroll) */
-    background-color: #000000; /* Fond noir en attendant le chargement de la caméra */
-    font-family: sans-serif;
-}
-
-/* Le canevas où Three.js dessine */
-canvas {
-    display: block;
+/* Fondations de l'overlay */
+#ui-container {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100vw;
     height: 100vh;
+    z-index: 999;
+    pointer-events: none; /* Crucial : permet de cliquer sur la 3D derrière */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Style du bouton AR généré par Three.js */
-/* Note : Three.js injecte un bouton avec un ID interne, 
-   mais on peut personnaliser son apparence générale ici */
-#ARButton {
-    bottom: 20px !important; /* Place le bouton à 20px du bas */
-    border-radius: 10px !important;
-    background: rgba(0, 0, 0, 0.8) !important;
-    color: white !important;
-    border: 1px solid white !important;
-    font-weight: bold !important;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* Optionnel : Un message de chargement ou d'instruction */
-.instructions {
+.ui-element {
     position: absolute;
-    top: 10px;
-    width: 100%;
-    text-align: center;
+    pointer-events: auto; /* Réactive le clic pour les boutons */
+    background: rgba(15, 15, 25, 0.8);
+    backdrop-filter: blur(8px);
     color: white;
-    z-index: 10;
-    pointer-events: none; /* Laisse passer les clics vers la 3D */
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    border: 1px solid rgba(0, 255, 204, 0.3);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+/* Positionnement des 4 coins */
+
+/* Haut Gauche : OpenAI */
+#btn-openai {
+    top: 20px;
+    left: 20px;
+    font-size: 16px;
+    color: #00ffcc;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+}
+
+/* Haut Droite : Menu */
+#menu-wrapper {
+    top: 20px;
+    right: 20px;
+    min-width: 100px;
+    text-align: center;
+}
+
+#menu-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+#menu-content {
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* Bas Gauche : Compteur */
+#item-counter {
+    bottom: 30px;
+    left: 20px;
+    font-weight: bold;
+}
+
+#count {
+    color: #ffd700;
+    font-size: 1.2em;
+}
+
+/* Bas Droite : Boussole */
+#compass-container {
+    bottom: 30px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%; /* Forme circulaire */
+}
+
+#compass-arrow {
+    font-size: 2.5rem;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Utilitaires */
+.hidden {
+    display: none;
+}
+
+hr {
+    border: 0.5px solid rgba(255,255,255,0.2);
 }
