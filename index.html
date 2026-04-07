@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>MISSION AR — Jeu de piste</title>
+
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
+  <!-- AR.js -->
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ========== ÉCRAN D'ACCUEIL ========== -->
+<div id="screen-intro" class="screen active">
+  <div class="scanline"></div>
+  <div class="intro-content">
+    <div class="logo-badge">▲</div>
+    <h1 class="glitch" data-text="MISSION AR">MISSION AR</h1>
+    <p class="subtitle">JEU DE PISTE — PROTOCOLE ALPHA</p>
+    <div class="divider"></div>
+    <p class="description">
+      Localisez les cibles disséminées dans la zone.<br>
+      Approchez-vous à moins de <strong>20 mètres</strong> pour les activer.
+    </p>
+    <div class="steps-preview">
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+    </div>
+    <button class="btn-primary" onclick="initGPS()">
+      <span>⬡</span> INITIALISER GPS
+    </button>
+    <p class="warning" id="gps-warning"></p>
+  </div>
+</div>
+
+<!-- ========== ÉCRAN DE JEU ========== -->
+<div id="screen-game" class="screen">
+
+  <!-- HUD overlay -->
+  <div id="hud">
+    <div id="hud-top">
+      <div id="hud-mission">
+        <span class="label">MISSION</span>
+        <span id="hud-step">01 / 04</span>
+      </div>
+      <div id="hud-gps">
+        <span class="label">GPS</span>
+        <span id="hud-accuracy">—</span>
+      </div>
+      <div id="hud-dist">
+        <span class="label">DISTANCE</span>
+        <span id="hud-meters">—</span>
+      </div>
+    </div>
+
+    <div id="hud-target">
+      <div class="target-ring"></div>
+      <div class="target-cross"></div>
+    </div>
+
+    <div id="hud-bottom">
+      <div id="mission-text">
+        <span class="label">OBJECTIF ›</span>
+        <span id="mission-description">Chargement...</span>
+      </div>
+      <div id="compass-bar">
+        <div id="compass-needle">↑</div>
+      </div>
+    </div>
+
+    <!-- Notification flash -->
+    <div id="notification" class="hidden"></div>
+  </div>
+
+  <!-- Scène AR -->
+  <a-scene
+    id="ar-scene"
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;"
+    vr-mode-ui="enabled: false"
+    renderer="logarithmicDepthBuffer: true; antialias: true;"
+    loading-screen="enabled: false">
+
+    <a-camera gps-camera rotation-reader></a-camera>
+
+    <!-- Les objets AR GPS seront injectés dynamiquement par main.js -->
+
+  </a-scene>
+</div>
+
+<!-- ========== ÉCRAN SUCCÈS ÉTAPE ========== -->
+<div id="screen-success" class="screen">
+  <div class="scanline"></div>
+  <div class="success-content">
+    <div class="check-icon">✓</div>
+    <h2>CIBLE ATTEINTE</h2>
+    <p id="success-message">Bien joué !</p>
+    <div class="clue-box">
+      <span class="label">INDICE</span>
+      <p id="clue-text"></p>
+    </div>
+    <button class="btn-primary" onclick="nextStep()">
+      ÉTAPE SUIVANTE →
+    </button>
+  </div>
+</div>
+
+<!-- ========== ÉCRAN FIN ========== -->
+<div id="screen-end" class="screen">
+  <div class="scanline"></div>
+  <div class="end-content">
+    <div class="logo-badge gold">★</div>
+    <h2 class="glitch gold" data-text="MISSION ACCOMPLIE">MISSION ACCOMPLIE</h2>
+    <p>Toutes les cibles ont été localisées.</p>
+    <div class="divider"></div>
+    <p id="end-final-clue" class="final-clue"></p>
+    <button class="btn-primary" onclick="restartGame()">
+      ↺ REJOUER
+    </button>
+  </div>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>
