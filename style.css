@@ -35,13 +35,16 @@ html, body {
 
 /* ─── SCREENS ────────────────────────────────── */
 .screen {
-  position: fixed;
-  inset: 0;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
+  position: fixed; /* Utiliser fixed plutôt que absolute */
+  top: 0;
+  left: 0;
+  width: 100vw; /* 100% de la largeur de vue */
+  height: 100vh; /* 100% de la hauteur de vue */
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  z-index: 10; /* Pour être sûr de passer au-dessus de la vidéo AR */
 }
 .screen.active { display: flex; }
 
