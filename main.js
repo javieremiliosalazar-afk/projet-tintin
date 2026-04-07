@@ -1,53 +1,140 @@
-// Création de la scène
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xeeeeee);
+/* =========================
+   CONFIGURATION
+========================= */
 
-// Caméra
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-camera.position.set(0, 1.6, 3);
+const checkpoints = [
+  {
+    name: "Point 1",
+    lat: 50.8466,
+    lon: 4.3528,
+    radius: 100000 // large pour test
+  }
+];
 
-// Renderer
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.getElementById('container').appendChild(renderer.domElement);
+let currentStep = 0;
+let cubeVisible = false;
 
-// Lumières
-const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-light.position.set(0, 20, 0);
-scene.add(light);
+/* =========================
+   DISTANCE GPS
+========================= */
 
-// GLTF Loader
-const loader = new THREE.GLTFLoader();
-loader.load('assets/model.glb', function(gltf){
-    const model = gltf.scene;
-    model.scale.set(1,1,1);
-    scene.add(model);
-}, undefined, function(error){
-    console.error(error);
-});
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3;
 
-// Contrôles basiques (rotation de la caméra avec la souris)
-let isDragging = false;
-let previousMousePosition = { x: 0, y: 0 };
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
 
-renderer.domElement.addEventListener('mousedown', () => isDragging = true);
-renderer.domElement.addEventListener('mouseup', () => isDragging = false);
-renderer.domElement.addEventListener('mousemove', (e) => {
-    if(!isDragging) return;
-    const deltaMove = { x: e.offsetX - previousMousePosition.x, y: e.offsetY - previousMousePosition.y };
-    scene.rotation.y += deltaMove.x * 0.005;
-    previousMousePosition = { x: e.offsetX, y: e.offsetY };
-});
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
+  const a =
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) * Math.cos(φ2) *
+    Math.sin(Δλ / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
 }
-animate();
 
-// Redimensionnement
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+/* =========================
+   LOGIQUE DU JEU
+========================= */
+
+function checkCheckpoint(lat, lon) {
+
+  if (currentStep >= checkpoints.length) {
+    document.getElementById("status").innerText = "🎉 Jeu terminé !";
+    return;
+  }
+
+  const point = checkpoints[currentStep];
+
+  const distance = getDistance(lat, lon, point.lat, point.lon);
+
+  document.getElementById("status").innerText =
+    "Distance: " + Math.round(distance) + " m";
+
+  if (distance < point.radius && !cubeVisible) {
+    spawnCube(point.name);
+  }
+}
+
+function spawnCube(name) {
+
+  const cube = document.querySelector('#cube');
+
+  if (!cube) {
+    console.error("Cube introuvable");
+    return;
+  }
+
+  cube.setAttribute('visible', 'true');
+  cubeVisible = true;
+
+  document.getElementById("status").innerText =
+    "✅ " + name + " trouvé !";
+
+  document.getElementById("ui").classList.add("found");
+
+  setTimeout(() => {
+    document.getElementById("ui").classList.remove("found");
+  }, 600);
+
+  setTimeout(() => {
+    cube.setAttribute('visible', 'false');
+    cubeVisible = false;
+    currentStep++;
+
+    document.getElementById("step").innerText =
+      "Étape: " + currentStep;
+
+  }, 3000);
+}
+
+/* =========================
+   GPS (BOUTON)
+========================= */
+
+function startGPS() {
+
+  document.getElementById("status").innerText = "📡 Activation GPS...";
+
+  if (!navigator.geolocation) {
+    alert("GPS non supporté");
+    return;
+  }
+
+  navigator.geolocation.watchPosition(
+    (position) => {
+
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      console.log("Position:", lat, lon);
+
+      checkCheckpoint(lat, lon);
+    },
+
+    (error) => {
+      console.error(error);
+
+      document.getElementById("status").innerText =
+        "❌ GPS refusé ou indisponible";
+    },
+
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 5000
+    }
+  );
+}
+
+/* =========================
+   DEBUG
+========================= */
+
+window.addEventListener("load", () => {
+  console.log("main.js chargé");
 });
