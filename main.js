@@ -101,10 +101,12 @@ function showScreen(id) {
 
 // ─── INITIALISATION GPS ───────────────────────────────────────────────────────
 
-function initGPS() {
-  const warning = document.getElementById("gps-warning");
-  warning.textContent = "Demande d'accès GPS en cours...";
+// 1. Cacher l'écran d'accueil et montrer l'écran de jeu
+    document.getElementById('screen-intro').classList.remove('active');
+    document.getElementById('screen-game').classList.add('active');
 
+    // 2. Forcer AR.js à redimensionner la vidéo
+    window.dispatchEvent(new Event('resize'));
   if (!navigator.geolocation) {
     warning.textContent = "⚠ GPS non supporté sur cet appareil.";
     return;
