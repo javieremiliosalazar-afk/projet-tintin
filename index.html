@@ -4,42 +4,16 @@
   <meta charset="utf-8">
   <title>Jeu de piste AR</title>
 
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: sans-serif;
-    }
-
-    #ui {
-      position: fixed;
-      top: 15px;
-      left: 15px;
-      right: 15px;
-      max-width: 320px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      padding: 15px;
-      border-radius: 12px;
-      z-index: 10;
-    }
-
-    #button {
-      margin-top: 10px;
-      padding: 10px;
-      background: #00c896;
-      border-radius: 10px;
-      text-align: center;
-      font-weight: bold;
-      cursor: pointer;
-    }
-  </style>
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
+<!-- UI -->
 <div id="ui">
   <div>🎯 Jeu de piste AR</div>
   <div id="status">Clique sur START</div>
@@ -47,6 +21,7 @@
   <div id="button" onclick="startGPS()">▶ START GPS</div>
 </div>
 
+<!-- SCÈNE AR -->
 <a-scene embedded background="color: #111">
 
   <a-camera position="0 1.6 0"></a-camera>
@@ -61,119 +36,8 @@
 
 </a-scene>
 
-<script>
-
-/* =========================
-   CONFIG
-========================= */
-
-const checkpoints = [
-  {
-    name: "Point 1",
-    lat: 50.8466,
-    lon: 4.3528,
-    radius: 100000 // large pour test
-  }
-];
-
-let currentStep = 0;
-let cubeVisible = false;
-
-/* =========================
-   DISTANCE GPS
-========================= */
-
-function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371e3;
-  const φ1 = lat1 * Math.PI/180;
-  const φ2 = lat2 * Math.PI/180;
-  const Δφ = (lat2-lat1) * Math.PI/180;
-  const Δλ = (lon2-lon1) * Math.PI/180;
-
-  const a =
-    Math.sin(Δφ/2)**2 +
-    Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ/2)**2;
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-  return R * c;
-}
-
-/* =========================
-   GAME LOGIC
-========================= */
-
-function checkCheckpoint(lat, lon) {
-  const point = checkpoints[currentStep];
-
-  const distance = getDistance(lat, lon, point.lat, point.lon);
-
-  document.getElementById("status").innerText =
-    "Distance: " + Math.round(distance) + " m";
-
-  if (distance < point.radius && !cubeVisible) {
-    spawnCube(point.name);
-  }
-}
-
-function spawnCube(name) {
-  const cube = document.querySelector('#cube');
-
-  cube.setAttribute('visible', 'true');
-  cubeVisible = true;
-
-  document.getElementById("status").innerText =
-    "✅ " + name + " trouvé !";
-
-  setTimeout(() => {
-    cube.setAttribute('visible', 'false');
-    cubeVisible = false;
-    currentStep++;
-
-    document.getElementById("step").innerText =
-      "Étape: " + currentStep;
-
-  }, 3000);
-}
-
-/* =========================
-   GPS START (IMPORTANT)
-========================= */
-
-function startGPS() {
-
-  document.getElementById("status").innerText = "📡 Activation GPS...";
-
-  if (!navigator.geolocation) {
-    alert("GPS non supporté");
-    return;
-  }
-
-  navigator.geolocation.watchPosition(
-    (position) => {
-
-      const lat = position.coords.latitude;
-      const lon = position.coords.longitude;
-
-      console.log("Position:", lat, lon);
-
-      checkCheckpoint(lat, lon);
-    },
-    (error) => {
-      document.getElementById("status").innerText =
-        "❌ Erreur GPS";
-      console.error(error);
-    },
-    {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 5000
-    }
-  );
-}
-
-</script>
+<!-- JS -->
+<script src="main.js"></script>
 
 </body>
 </html>
