@@ -1,17 +1,3 @@
-Ton code contient encore des erreurs de syntaxe critiques (du code "en vrac" qui traîne à l'extérieur des fonctions). Quand le navigateur rencontre une erreur de syntaxe dans un fichier .js, il arrête de lire tout le fichier. C'est pour ça que ton bouton ne réagit pas.
-
-Voici la version nettoyée et complète de ton fichier main.js.
-Ce que j'ai corrigé :
-
-    Suppression des doublons : Tu avais deux fonctions initGPS et du code qui traînait au milieu.
-
-    Fermeture des balises : J'ai remis les accolades { } là où elles manquaient.
-
-    Logique de démarrage : J'ai lié initGPS à startGame proprement.
-
-Copie-colle ce code dans ton main.js :
-JavaScript
-
 /* =============================================
    MISSION AR — main.js (Version Corrigée)
    ============================================= */
