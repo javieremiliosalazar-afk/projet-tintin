@@ -10,9 +10,9 @@ const STEPS = [
     id: 1,
     label: "01 / 04",
     description: "Trouvez la fontaine dans le parc central",
-    lat: 48.8566,   // ← À MODIFIER
-    lng: 2.3522,    // ← À MODIFIER
-    radius: 20,     // Distance en mètres pour valider
+    lat: 50.87708482698384,   // ← À MODIFIER
+    lng: 4.378923178722083,    // ← À MODIFIER
+    radius: 5,     // Distance en mètres pour valider
     color: "#00e5ff",
     clue: "Bravo ! Votre prochain objectif se trouve près de l'entrée principale du musée.",
     arLabel: "CIBLE 01"
