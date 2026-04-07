@@ -1,120 +1,167 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AR Game Prototype</title>
-    <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <title>WebAR Treasure Hunt</title>
+
+  <!-- A-Frame + 8th Wall compatible -->
+  <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
+
+  <style>
+    body { margin: 0; overflow: hidden; }
+    #ui {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 10px;
+      border-radius: 10px;
+      font-family: sans-serif;
+    }
+  </style>
 </head>
+
 <body>
 
-    <div id="ui-container">
-        
-        <button id="btn-openai" class="ui-element" onclick="startVoice()">🎙️ Parler</button>
+<div id="ui">
+  <div>🎯 Jeu de piste AR</div>
+  <div id="status">Recherche GPS...</div>
+  <div id="step">Étape: 0</div>
+</div>
 
-        <div id="menu-wrapper" class="ui-element">
-            <button id="menu-btn" onclick="toggleMenu()">☰ Menu</button>
-            <div id="menu-content" class="hidden">
-                <p>🎯 Chercher le signal</p>
-                <hr>
-                <button onclick="requestPermissions()">Activer Boussole</button>
-            </div>
-        </div>
+<a-scene embedded vr-mode-ui="enabled: false">
+  
+  <!-- Caméra -->
+  <a-camera position="0 1.6 0"></a-camera>
 
-        <div id="item-counter" class="ui-element">
-            Objets : <span id="count">0</span>
-        </div>
+  <!-- Cube AR -->
+  <a-box 
+    id="cube"
+    position="0 0 -3"
+    color="red"
+    visible="false"
+    animation="property: rotation; to: 0 360 0; loop: true; dur: 4000">
+  </a-box>
 
-        <div id="compass-container" class="ui-element">
-            <div id="compass-arrow">⬆️</div>
-        </div>
+</a-scene>
 
-        <div id="instruction-overlay">Scannez le sol et cliquez pour poser le personnage</div>
-    </div>
+<script>
+/* =========================
+   CONFIGURATION DU JEU
+========================= */
 
-    <a-scene 
-        webxr="requiredFeatures: hit-test, local-floor; optionalFeatures: dom-overlay; overlayElement: #ui-container;"
-        renderer="antialias: true; alpha: true;">
-        
-        <a-assets>
-            </a-assets>
+const checkpoints = [
+  {
+    name: "Point 1",
+    lat: 50.8466,
+    lon: 4.3528,
+    radius: 25
+  },
+  {
+    name: "Point 2",
+    lat: 50.8455,
+    lon: 4.3600,
+    radius: 25
+  }
+];
 
-        <a-entity id="reticle" raycaster="objects: .none">
-            <a-ring color="#00ffcc" rotation="-90 0 0" radius-inner="0.05" radius-outer="0.08"></a-ring>
-        </a-entity>
+let currentStep = 0;
+let cubeVisible = false;
 
-        <a-entity id="character" 
-                  geometry="primitive: cylinder; height: 1.2; radius: 0.4" 
-                  material="color: #FF5733; emissive: #330000"
-                  visible="false">
-            <a-circle rotation="-90 0 0" radius="0.5" material="shader: flat; color: black; opacity: 0.3" position="0 -0.59 0"></a-circle>
-        </a-entity>
+/* =========================
+   DISTANCE GPS
+========================= */
 
-        <a-entity camera position="0 1.6 0"></a-entity>
-    </a-scene>
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3;
+  const φ1 = lat1 * Math.PI/180;
+  const φ2 = lat2 * Math.PI/180;
+  const Δφ = (lat2-lat1) * Math.PI/180;
+  const Δλ = (lon2-lon1) * Math.PI/180;
 
-    <script>
-        let items = 0;
-        const scene = document.querySelector('a-scene');
-        const reticle = document.querySelector('#reticle');
-        const character = document.querySelector('#character');
-        const instruction = document.querySelector('#instruction-overlay');
+  const a =
+    Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+    Math.cos(φ1) * Math.cos(φ2) *
+    Math.sin(Δλ/2) * Math.sin(Δλ/2);
 
-        // --- LOGIQUE DE PLACEMENT AU SOL ---
-        scene.addEventListener('enter-vr', () => {
-            if (scene.is('ar-mode')) {
-                instruction.style.display = 'block';
-            }
-        });
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-        // Utilisation du système Hit-Test de WebXR
-        scene.addEventListener('click', (event) => {
-            if (character.getAttribute('visible') === 'false' && reticle.getAttribute('visible') === 'true') {
-                const position = reticle.getAttribute('position');
-                character.setAttribute('position', position);
-                character.setAttribute('visible', 'true');
-                instruction.style.display = 'none';
-                
-                // Animation d'apparition
-                character.setAttribute('animation', 'property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack');
-            } else {
-                // Si le perso est déjà là, on simule une collecte
-                items++;
-                document.getElementById('count').innerText = items;
-            }
-        });
+  return R * c;
+}
 
-        // --- UI & MENUS ---
-        function toggleMenu() {
-            document.getElementById('menu-content').classList.toggle('hidden');
-        }
+/* =========================
+   LOGIQUE DE JEU
+========================= */
 
-        function startVoice() {
-            const btn = document.getElementById('btn-openai');
-            btn.classList.add('listening');
-            btn.innerText = "⌛ Écoute...";
-            setTimeout(() => { 
-                btn.classList.remove('listening');
-                btn.innerText = "🎙️ Parler"; 
-            }, 3000);
-        }
+function checkCheckpoint(lat, lon) {
+  if (currentStep >= checkpoints.length) {
+    document.getElementById("status").innerText = "🎉 Jeu terminé !";
+    return;
+  }
 
-        // --- BOUSSOLE (LOGIQUE SIMPLIFIÉE) ---
-        function requestPermissions() {
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission().then(res => {
-                    if (res === 'granted') window.addEventListener('deviceorientation', handleOrientation);
-                });
-            } else {
-                window.addEventListener('deviceorientation', handleOrientation);
-            }
-        }
+  const point = checkpoints[currentStep];
+  const distance = getDistance(lat, lon, point.lat, point.lon);
 
-        function handleOrientation(event) {
-            const heading = event.webkitCompassHeading || 360 - event.alpha;
-            document.getElementById('compass-arrow').style.transform = `rotate(${heading}deg)`;
-        }
-    </script>
+  document.getElementById("status").innerText =
+    `Distance: ${Math.round(distance)} m`;
+
+  if (distance < point.radius && !cubeVisible) {
+    spawnCube(point.name);
+  }
+}
+
+function spawnCube(name) {
+  const cube = document.querySelector('#cube');
+  cube.setAttribute('visible', 'true');
+  cubeVisible = true;
+
+  document.getElementById("status").innerText =
+    `✅ ${name} trouvé !`;
+
+  setTimeout(() => {
+    cube.setAttribute('visible', 'false');
+    cubeVisible = false;
+    currentStep++;
+
+    document.getElementById("step").innerText =
+      `Étape: ${currentStep}`;
+
+  }, 4000);
+}
+
+/* =========================
+   GPS TRACKING
+========================= */
+
+if ("geolocation" in navigator) {
+
+  navigator.geolocation.watchPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      console.log("Position:", lat, lon);
+
+      checkCheckpoint(lat, lon);
+    },
+    (error) => {
+      document.getElementById("status").innerText =
+        "❌ GPS refusé ou indisponible";
+      console.error(error);
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 1000,
+      timeout: 5000
+    }
+  );
+
+} else {
+  alert("Geolocation non supportée");
+}
+
+</script>
+
 </body>
 </html>
