@@ -127,12 +127,11 @@ function getGPSError(err) {
 // ─── DÉMARRAGE DU JEU ─────────────────────────────────────────────────────────
 
 function startGame() {
-  currentStepIndex = 0;
-  stepValidated = false;
-  showScreen("screen-game");
-  injectARObjects(); // On injecte les objets en premier
-  loadStep(currentStepIndex);
-  startWatchingGPS();
+  document.getElementById('screen-intro').style.display = "none";
+  document.getElementById('screen-game').style.display = "block";
+    injectARObjects();
+    loadStep(0);
+    startWatchingGPS();
 }
 
 function loadStep(index) {
