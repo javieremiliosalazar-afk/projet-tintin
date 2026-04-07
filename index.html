@@ -2,22 +2,38 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>WebAR Treasure Hunt</title>
+  <title>Jeu de piste AR</title>
 
-  <!-- A-Frame + 8th Wall compatible -->
   <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
 
   <style>
-    body { margin: 0; overflow: hidden; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
     #ui {
       position: fixed;
-      top: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.6);
+      top: 15px;
+      left: 15px;
+      right: 15px;
+      max-width: 320px;
+      background: rgba(0,0,0,0.7);
       color: white;
+      padding: 15px;
+      border-radius: 12px;
+      z-index: 10;
+    }
+
+    #button {
+      margin-top: 10px;
       padding: 10px;
+      background: #00c896;
       border-radius: 10px;
-      font-family: sans-serif;
+      text-align: center;
+      font-weight: bold;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -26,16 +42,15 @@
 
 <div id="ui">
   <div>🎯 Jeu de piste AR</div>
-  <div id="status">Recherche GPS...</div>
+  <div id="status">Clique sur START</div>
   <div id="step">Étape: 0</div>
+  <div id="button" onclick="startGPS()">▶ START GPS</div>
 </div>
 
-<a-scene embedded vr-mode-ui="enabled: false">
-  
-  <!-- Caméra -->
+<a-scene embedded background="color: #111">
+
   <a-camera position="0 1.6 0"></a-camera>
 
-  <!-- Cube AR -->
   <a-box 
     id="cube"
     position="0 0 -3"
@@ -47,8 +62,9 @@
 </a-scene>
 
 <script>
+
 /* =========================
-   CONFIGURATION DU JEU
+   CONFIG
 ========================= */
 
 const checkpoints = [
@@ -56,13 +72,7 @@ const checkpoints = [
     name: "Point 1",
     lat: 50.8466,
     lon: 4.3528,
-    radius: 25
-  },
-  {
-    name: "Point 2",
-    lat: 50.8455,
-    lon: 4.3600,
-    radius: 25
+    radius: 100000 // large pour test
   }
 ];
 
@@ -81,9 +91,9 @@ function getDistance(lat1, lon1, lat2, lon2) {
   const Δλ = (lon2-lon1) * Math.PI/180;
 
   const a =
-    Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+    Math.sin(Δφ/2)**2 +
     Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    Math.sin(Δλ/2)**2;
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
@@ -91,20 +101,16 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 /* =========================
-   LOGIQUE DE JEU
+   GAME LOGIC
 ========================= */
 
 function checkCheckpoint(lat, lon) {
-  if (currentStep >= checkpoints.length) {
-    document.getElementById("status").innerText = "🎉 Jeu terminé !";
-    return;
-  }
-
   const point = checkpoints[currentStep];
+
   const distance = getDistance(lat, lon, point.lat, point.lon);
 
   document.getElementById("status").innerText =
-    `Distance: ${Math.round(distance)} m`;
+    "Distance: " + Math.round(distance) + " m";
 
   if (distance < point.radius && !cubeVisible) {
     spawnCube(point.name);
@@ -113,11 +119,12 @@ function checkCheckpoint(lat, lon) {
 
 function spawnCube(name) {
   const cube = document.querySelector('#cube');
+
   cube.setAttribute('visible', 'true');
   cubeVisible = true;
 
   document.getElementById("status").innerText =
-    `✅ ${name} trouvé !`;
+    "✅ " + name + " trouvé !";
 
   setTimeout(() => {
     cube.setAttribute('visible', 'false');
@@ -125,19 +132,27 @@ function spawnCube(name) {
     currentStep++;
 
     document.getElementById("step").innerText =
-      `Étape: ${currentStep}`;
+      "Étape: " + currentStep;
 
-  }, 4000);
+  }, 3000);
 }
 
 /* =========================
-   GPS TRACKING
+   GPS START (IMPORTANT)
 ========================= */
 
-if ("geolocation" in navigator) {
+function startGPS() {
+
+  document.getElementById("status").innerText = "📡 Activation GPS...";
+
+  if (!navigator.geolocation) {
+    alert("GPS non supporté");
+    return;
+  }
 
   navigator.geolocation.watchPosition(
     (position) => {
+
       const lat = position.coords.latitude;
       const lon = position.coords.longitude;
 
@@ -147,18 +162,15 @@ if ("geolocation" in navigator) {
     },
     (error) => {
       document.getElementById("status").innerText =
-        "❌ GPS refusé ou indisponible";
+        "❌ Erreur GPS";
       console.error(error);
     },
     {
       enableHighAccuracy: true,
-      maximumAge: 1000,
+      maximumAge: 0,
       timeout: 5000
     }
   );
-
-} else {
-  alert("Geolocation non supportée");
 }
 
 </script>
