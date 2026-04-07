@@ -1,88 +1,78 @@
 /* RESET */
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { margin: 0; overflow: hidden; font-family: sans-serif; }
-
-/* CONTAINER OVERLAY */
-#ui-container {
-    position: fixed;
-    inset: 0; /* Prend tout l'écran */
-    z-index: 9999;
-    pointer-events: none; /* Laisse passer le clic vers l'AR */
-    color: white;
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.ui-element {
-    position: absolute;
-    pointer-events: auto; /* Active le clic sur les boutons */
-    background: rgba(20, 20, 30, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(0, 255, 204, 0.4);
-    border-radius: 12px;
-    padding: 12px;
+/* UI PANEL */
+#ui {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  max-width: 320px;
+
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(10px);
+
+  color: #fff;
+  padding: 15px;
+  border-radius: 16px;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+
+  z-index: 10;
 }
 
-/* POSITIONS */
-#btn-openai {
-    top: calc(20px + env(safe-area-inset-top));
-    left: calc(20px + env(safe-area-inset-left));
-    color: #00ffcc;
-    border: 1px solid #00ffcc;
-    font-weight: bold;
+/* TITRE */
+#ui div:first-child {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
-#menu-wrapper {
-    top: calc(20px + env(safe-area-inset-top));
-    right: calc(20px + env(safe-area-inset-right));
-    min-width: 100px;
+/* STATUS */
+#status {
+  font-size: 14px;
+  margin-bottom: 6px;
+  opacity: 0.9;
 }
 
-#menu-btn {
-    background: none; border: none; color: white; cursor: pointer; font-size: 16px;
+/* STEP */
+#step {
+  font-size: 13px;
+  opacity: 0.7;
 }
 
-#item-counter {
-    bottom: calc(30px + env(safe-area-inset-bottom));
-    left: calc(20px + env(safe-area-inset-left));
-}
-
-#compass-container {
-    bottom: calc(30px + env(safe-area-inset-bottom));
-    right: calc(20px + env(safe-area-inset-right));
-    width: 65px; height: 65px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 50%;
-}
-
-#compass-arrow {
-    font-size: 2.5rem;
-    transition: transform 0.2s ease-out;
-    transform-origin: center center;
-}
-
-/* INSTRUCTIONS CENTRALES */
-#instruction-overlay {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.6);
-    padding: 10px 20px;
-    border-radius: 20px;
-    display: none;
-    text-align: center;
-}
-
-/* ANIMATIONS */
-.hidden { display: none; }
-
-.listening {
-    animation: pulse 1.5s infinite;
-    background: rgba(0, 255, 204, 0.2);
+/* ANIMATION FEEDBACK */
+.found {
+  animation: pulse 0.6s ease;
 }
 
 @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(0, 255, 204, 0.7); }
-    70% { box-shadow: 0 0 0 12px rgba(0, 255, 204, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 255, 204, 0); }
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
-hr { border: 0.5px solid rgba(255,255,255,0.1); margin: 8px 0; }
+/* BOUTON OPTIONNEL */
+.button {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #00c896;
+  text-align: center;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* RESPONSIVE (mobile friendly) */
+@media (max-width: 480px) {
+  #ui {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    padding: 12px;
+  }
+}
