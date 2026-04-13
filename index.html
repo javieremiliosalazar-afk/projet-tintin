@@ -1,47 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <title>WebAR ElevenLabs</title>
+  <meta charset="UTF-8">
+  <title>WebAR + ElevenLabs</title>
+  <link rel="stylesheet" href="style.css">
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-
-  <!-- Animation mixer -->
-  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-
-  <!-- CSS -->
-  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <!-- Bouton -->
-  <button id="talkBtn">🎤 Parler</button>
+  <!-- Bouton UI -->
+  <button id="voiceBtn">🎤 Parler</button>
 
   <!-- Scène AR -->
   <a-scene embedded>
-
-    <!-- Lumière -->
-    <a-light type="ambient" intensity="1"></a-light>
-    <a-light type="directional" position="1 2 1"></a-light>
+    
+    <!-- Assets -->
+    <a-assets>
+      <a-asset-item id="model" src="model.glb"></a-asset-item>
+    </a-assets>
 
     <!-- Caméra -->
     <a-camera position="0 1.6 3"></a-camera>
 
-    <!-- Modèle GLB -->
-    <a-entity
-      id="model"
-      gltf-model="url(model.glb)"
-      position="0 0 -2"
-      scale="1 1 1"
-      animation-mixer
-    ></a-entity>
+    <!-- Personnage -->
+    <a-entity 
+      gltf-model="#model"
+      position="0 0 -3"
+      scale="1 1 1">
+    </a-entity>
 
   </a-scene>
 
-  <!-- JS -->
   <script src="main.js"></script>
-
 </body>
 </html>
