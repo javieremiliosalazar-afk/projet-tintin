@@ -1,27 +1,19 @@
 body {
   margin: 0;
   overflow: hidden;
-  font-family: Arial, sans-serif;
 }
 
 /* Bouton en haut à gauche */
-#talkBtn {
+#voiceBtn {
   position: absolute;
   top: 20px;
   left: 20px;
   z-index: 10;
-
-  padding: 10px 15px;
-  font-size: 14px;
-
-  background: black;
-  color: white;
+  padding: 12px 18px;
+  font-size: 16px;
   border: none;
-  border-radius: 8px;
-
+  border-radius: 10px;
+  background: #ff4d4d;
+  color: white;
   cursor: pointer;
-}
-
-#talkBtn:hover {
-  background: #333;
 }
