@@ -2,8 +2,8 @@ const button = document.getElementById("talkBtn");
 
 button.addEventListener("click", async () => {
   try {
-    const apiKey = "TON_API_KEY";
-    const voiceId = "TON_VOICE_ID";
+    const apiKey = "sk_f2a0d378048edc5ceb7108296de4e05a261ca4eb4bff8ed2";
+    const voiceId = "1Z9SUkvx5gRIEOA9KIRP";
 
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
