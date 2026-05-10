@@ -1,13 +1,8 @@
-/* ═══════════════════════════════════════
+/* ══════════════════════════════════════
    TINTIN AR — style.css
-   Comics-oriented UI
-═══════════════════════════════════════ */
+══════════════════════════════════════ */
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --ink:   #1A1A2E;
@@ -15,7 +10,6 @@
   --red:   #D32F2F;
   --blue:  #1565C0;
   --gold:  #F9A825;
-  --skin:  #FFCC80;
 }
 
 body {
@@ -27,38 +21,39 @@ body {
   position: fixed;
 }
 
-/* ── Halftone background ── */
+/* ── Halftone ── */
 .halftone-bg {
-  position: fixed;
+  position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
   background-image:
-    radial-gradient(circle, rgba(249,168,37,.35) 1.2px, transparent 1.2px),
+    radial-gradient(circle, rgba(249,168,37,.38) 1.2px, transparent 1.2px),
     radial-gradient(circle, rgba(249,168,37,.18) 1px,   transparent 1px);
   background-size: 22px 22px, 11px 11px;
   background-position: 0 0, 5.5px 5.5px;
 }
 
-/* ════════════════════════
-   START SCREEN
-════════════════════════ */
-#start-screen {
+/* ══════════════════════════════════════
+   ÉCRAN D'ACCUEIL
+══════════════════════════════════════ */
+#screen-start {
   position: fixed;
   inset: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 20;
+  z-index: 30;
   padding: 24px;
 }
 
-.comic-card {
+.card {
+  position: relative;
+  z-index: 1;
   background: white;
   border: 4px solid var(--ink);
   border-radius: 20px;
-  padding: 32px 28px 28px;
+  padding: 28px 24px 22px;
   max-width: 340px;
   width: 100%;
   box-shadow: 8px 8px 0 var(--ink);
@@ -66,149 +61,107 @@ body {
 }
 
 .logo-strip {
-  display: block;
-  width: fit-content;
-  margin: 0 auto 12px;
+  display: inline-block;
   background: var(--gold);
-  border: 3px solid var(--ink);
-  border-radius: 6px;
-  padding: 2px 14px;
-  font-family: 'Nunito', sans-serif;
+  border: 2.5px solid var(--ink);
+  border-radius: 5px;
+  padding: 2px 12px;
   font-weight: 900;
-  font-size: 0.7rem;
+  font-size: .68rem;
   letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--ink);
   transform: rotate(-1.5deg);
+  margin-bottom: 10px;
 }
 
-.comic-title {
+.title {
   font-family: 'Bangers', cursive;
-  font-size: 4rem;
+  font-size: 3.8rem;
   color: var(--ink);
   line-height: 1;
   letter-spacing: 3px;
   margin-bottom: 4px;
 }
-
-.comic-title span {
+.title span {
   color: var(--red);
   -webkit-text-stroke: 2px var(--ink);
 }
 
-/* Tintin SVG */
-.tintin-avatar {
-  width: 110px;
-  height: 110px;
-  margin: 16px auto;
+.avatar {
+  width: 100px;
+  height: 100px;
   display: block;
+  margin: 12px auto;
 }
 
-/* Speech bubble */
 .bubble {
   position: relative;
   background: var(--cream);
-  border: 3px solid var(--ink);
-  border-radius: 16px;
-  padding: 14px 18px;
-  font-size: 0.88rem;
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: .86rem;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--ink);
-  margin: 0 0 24px;
+  margin-bottom: 20px;
+  text-align: left;
 }
-
 .bubble::after {
   content: '';
   position: absolute;
-  bottom: -14px;
-  left: 44px;
-  border: 7px solid transparent;
+  bottom: -12px; left: 38px;
+  border: 6px solid transparent;
   border-top-color: var(--ink);
 }
-
 .bubble::before {
   content: '';
   position: absolute;
-  bottom: -10px;
-  left: 45px;
-  border: 6px solid transparent;
+  bottom: -8px; left: 39px;
+  border: 5px solid transparent;
   border-top-color: var(--cream);
   z-index: 1;
 }
 
-.compat-note {
-  margin-top: 12px;
-  font-size: 0.72rem;
-  color: #999;
-  font-weight: 700;
-}
-
-/* ════════════════════════
-   BUTTONS
-════════════════════════ */
-.btn {
+/* ── Boutons globaux ── */
+button {
   font-family: 'Bangers', cursive;
   letter-spacing: 2px;
-  cursor: pointer;
-  border: 3.5px solid var(--ink);
-  border-radius: 12px;
-  transition: transform .08s, box-shadow .08s;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
   text-transform: uppercase;
+  cursor: pointer;
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  transition: transform .08s, box-shadow .08s;
 }
-
-.btn:active {
+button:active {
   transform: translate(4px, 4px) !important;
   box-shadow: 2px 2px 0 var(--ink) !important;
 }
 
-.btn-primary {
+#btn-start, #btn-back {
   background: var(--red);
   color: white;
-  font-size: 1.6rem;
-  padding: 12px 32px;
-  box-shadow: 6px 6px 0 var(--ink);
+  font-size: 1.5rem;
+  padding: 11px 0;
   width: 100%;
+  box-shadow: 6px 6px 0 var(--ink);
 }
-
-.btn-primary:hover {
+#btn-start:hover, #btn-back:hover {
   transform: translate(-2px, -2px);
   box-shadow: 8px 8px 0 var(--ink);
 }
 
-.btn-blue {
-  background: var(--blue);
-  color: white;
-  font-size: 1.2rem;
-  padding: 10px 22px;
-  box-shadow: 5px 5px 0 var(--ink);
+.compat {
+  margin-top: 10px;
+  font-size: .7rem;
+  color: #aaa;
+  font-weight: 700;
 }
 
-.btn-blue:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 7px 7px 0 var(--ink);
-}
-
-.btn-close {
-  background: var(--ink);
-  color: white;
-  font-size: 1rem;
-  padding: 7px 16px;
-  box-shadow: 3px 3px 0 #555;
-}
-
-.btn-close:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 #555;
-}
-
-/* ════════════════════════
-   AR CANVAS
-════════════════════════ */
+/* ══════════════════════════════════════
+   CANVAS AR
+══════════════════════════════════════ */
 #ar-canvas {
   position: fixed;
   inset: 0;
@@ -217,54 +170,65 @@ body {
   z-index: 1;
 }
 
-/* ════════════════════════
-   AR OVERLAY
-════════════════════════ */
+/* ══════════════════════════════════════
+   OVERLAY AR
+══════════════════════════════════════ */
 #ar-ui {
   position: fixed;
   inset: 0;
-  z-index: 25;
+  z-index: 20;
   pointer-events: none;
   display: none;
 }
 
-#btn-parler {
+/* Hint bas de page */
+#hint {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  pointer-events: all;
-  display: none;
-}
-
-.ar-hint {
-  position: absolute;
-  bottom: 110px;
+  bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
   background: white;
   border: 3px solid var(--ink);
   border-radius: 30px;
   padding: 10px 22px;
-  font-family: 'Nunito', sans-serif;
   font-weight: 900;
-  font-size: 0.85rem;
+  font-size: .85rem;
   white-space: nowrap;
   box-shadow: 4px 4px 0 var(--ink);
   color: var(--ink);
+  pointer-events: none;
   animation: float 2s ease-in-out infinite;
 }
-
 @keyframes float {
   0%, 100% { transform: translateX(-50%) translateY(0); }
   50%       { transform: translateX(-50%) translateY(-5px); }
 }
 
-.placed-tag {
+/* Bouton Parler */
+#btn-parler {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: var(--blue);
+  color: white;
+  font-size: 1.15rem;
+  padding: 10px 20px;
+  box-shadow: 5px 5px 0 var(--ink);
+  pointer-events: all;
+  display: none;
+}
+#btn-parler:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--ink);
+}
+
+/* Badge "placé" */
+#placed-tag {
   position: absolute;
   top: 20px;
   right: 20px;
   background: var(--gold);
-  border: 3px solid var(--ink);
+  border: 2.5px solid var(--ink);
   border-radius: 8px;
   padding: 5px 14px;
   font-family: 'Bangers', cursive;
@@ -275,9 +239,9 @@ body {
   display: none;
 }
 
-/* ════════════════════════
-   CONVERSATION PANEL
-════════════════════════ */
+/* ══════════════════════════════════════
+   PANEL ELEVENLABS
+══════════════════════════════════════ */
 #conv-panel {
   position: fixed;
   bottom: -100%;
@@ -287,13 +251,12 @@ body {
   background: white;
   border-top: 4px solid var(--ink);
   border-radius: 20px 20px 0 0;
-  padding: 16px 20px 24px;
+  padding: 14px 20px 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
   transition: bottom .35s cubic-bezier(.34, 1.56, .64, 1);
 }
-
 #conv-panel.open {
   bottom: 0;
 }
@@ -303,7 +266,7 @@ body {
   height: 5px;
   background: #ddd;
   border-radius: 3px;
-  margin: 0 auto 12px;
+  margin-bottom: 12px;
 }
 
 .panel-header {
@@ -316,19 +279,45 @@ body {
 
 .panel-title {
   font-family: 'Bangers', cursive;
-  font-size: 1.7rem;
+  font-size: 1.6rem;
   letter-spacing: 2px;
   color: var(--ink);
 }
 
-elevenlabs-convai {
-  width: 100%;
-  max-width: 460px;
+#btn-close-conv {
+  background: var(--ink);
+  color: white;
+  font-size: .95rem;
+  padding: 6px 14px;
+  border-color: var(--ink);
+  box-shadow: 3px 3px 0 #555;
+}
+#btn-close-conv:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #555;
 }
 
-/* ════════════════════════
-   FLASH EFFECT
-════════════════════════ */
+elevenlabs-convai {
+  width: 100%;
+  max-width: 480px;
+}
+
+/* ══════════════════════════════════════
+   FALLBACK NO-AR
+══════════════════════════════════════ */
+#screen-noar {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  padding: 24px;
+}
+
+/* ══════════════════════════════════════
+   FLASH AU PLACEMENT
+══════════════════════════════════════ */
 #flash {
   position: fixed;
   inset: 0;
@@ -337,23 +326,7 @@ elevenlabs-convai {
   pointer-events: none;
   opacity: 0;
 }
-
 @keyframes flash {
   0%   { opacity: .9; }
   100% { opacity: 0; }
 }
-
-/* ════════════════════════
-   NO-AR FALLBACK
-════════════════════════ */
-#no-ar {
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 60;
-  background: var(--cream);
-  padding: 24px;
-}
-
