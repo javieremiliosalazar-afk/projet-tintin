@@ -76,7 +76,7 @@ function init() {
             const size = box.getSize(new THREE.Vector3());
 
             // 1. MODIFICATION DE LA TAILLE : On passe de 0.8 à 0.5 (50 cm)
-            const targetHeight = 0.14; 
+            const targetHeight = 0.2; 
             const scaleFactor = targetHeight / size.y;
             rawModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
