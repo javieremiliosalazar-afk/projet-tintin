@@ -19,9 +19,11 @@ import { RGBELoader }   from 'three/addons/loaders/RGBELoader.js';
    ══════════════════════════════════════════════ */
 
 const CONFIG = {
-  MODEL_URL: './model.glb',            // ← Remplacez par votre modèle GLTF/GLB
+  MODEL_URL: '.assets/model.glb',            // ← Remplacez par votre modèle GLTF/GLB
   MODEL_SCALE: 1.0,                    // ← Ajustez la taille du personnage
-  ELEVENLABS_AGENT_ID: 'VOTRE_AGENT_ID', // ← ID Agent ElevenLabs ConvAI
+  ELEVENLABS_AGENT_ID: 'agent_6201kncf8mfdey5s99wfnbgp952a', // ← ID Agent ElevenLabs ConvAI
+  ELEVENLABS_API_KEY:    'sk_f2a0d378048edc5ceb7108296de4e05a261ca4eb4bff8ed2',
+  ELEVENLABS_VOICE_ID:   '1Z9SUkvx5gRIEOA9KIRP',
   AUDIO_SAMPLE_RATE: 16000,            // Requis par ElevenLabs (16 kHz)
   AUDIO_CHUNK_MS: 250,                 // Intervalle d'envoi audio en ms
 };
