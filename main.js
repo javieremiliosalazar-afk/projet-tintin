@@ -276,7 +276,7 @@ async function toggleConversation() {
  * Connecte au WebSocket ElevenLabs ConvAI et ouvre le micro
  */
 async function startConversation() {
-  if (!CONFIG.ELEVENLABS_AGENT_ID || CONFIG.ELEVENLABS_AGENT_ID === 'VOTRE_AGENT_ID') {
+  if (!CONFIG.ELEVENLABS_AGENT_ID || CONFIG.ELEVENLABS_AGENT_ID === 'agent_6201kncf8mfdey5s99wfnbgp952a') {
     alert('⚠️ Veuillez configurer ELEVENLABS_AGENT_ID dans main.js');
     return;
   }
