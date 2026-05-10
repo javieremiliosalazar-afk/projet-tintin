@@ -57,10 +57,11 @@ function init() {
         document.getElementById('eleven-widget-container').classList.add('hidden');
     });
 
-    // 5. Chargement du Modèle 3D (Tintin)
+// 5. Chargement du Modèle 3D (Tintin)
     const loader = new GLTFLoader();
-    // REMPLACE PAR LE CHEMIN DE TON MODÈLE GLB
-    loader.load('./model.glb', function (gltf) {
+    
+    // Remplace 'tintin_idle.glb' par 'model.glb'
+    loader.load('model.glb', function (gltf) {
         model = gltf.scene;
         // Ajuste la taille du modèle selon tes besoins
         model.scale.set(0.5, 0.5, 0.5); 
