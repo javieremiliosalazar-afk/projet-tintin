@@ -25,9 +25,9 @@ const CONFIG = {
   MODEL_SCALE:         1.0,
  
   // ElevenLabs
-  ELEVENLABS_API_KEY:  'sk_f2a0d378048edc5ceb7108296de4e05a261ca4eb4bff8ed2',        // ← Collez votre nouvelle clé ici
-  ELEVENLABS_AGENT_ID: 'agent_6201kncf8mfdey5s99wfnbgp952a',       // ← Collez votre Agent ID ici
-  ELEVENLABS_VOICE_ID: '1Z9SUkvx5gRIEOA9KIRP',       // ← Collez votre Voice ID ici
+  ELEVENLABS_API_KEY:  "sk_f2a0d378048edc5ceb7108296de4e05a261ca4eb4bff8ed2",        // ← Collez votre nouvelle clé ici
+  ELEVENLABS_AGENT_ID: "agent_6201kncf8mfdey5s99wfnbgp952a",       // ← Collez votre Agent ID ici
+  ELEVENLABS_VOICE_ID: "1Z9SUkvx5gRIEOA9KIRP",       // ← Collez votre Voice ID ici
  
   // Audio
   AUDIO_SAMPLE_RATE:   16000,
@@ -263,9 +263,9 @@ async function toggleConversation() {
 async function startConversation() {
   // ✅ FIX 2 — Vérification avec des placeholders génériques
   if (
-    CONFIG.ELEVENLABS_AGENT_ID === 'agent_6201kncf8mfdey5s99wfnbgp952a' ||
-    CONFIG.ELEVENLABS_API_KEY  === 'sk_f2a0d378048edc5ceb7108296de4e05a261ca4eb4bff8ed2'  ||
-    CONFIG.ELEVENLABS_VOICE_ID === '1Z9SUkvx5gRIEOA9KIRP'
+    CONFIG.ELEVENLABS_AGENT_ID === 'VOTRE_AGENT_ID' ||
+    CONFIG.ELEVENLABS_API_KEY  === 'VOTRE_CLE_API'  ||
+    CONFIG.ELEVENLABS_VOICE_ID === 'VOTRE_VOICE_ID'
   ) {
     alert('⚠️ Veuillez renseigner AGENT_ID, API_KEY et VOICE_ID dans CONFIG (main.js)');
     return;
@@ -562,4 +562,4 @@ console.log(`
 ║  Voice ID : ${CONFIG.ELEVENLABS_VOICE_ID}
 ╚══════════════════════════════════════╝
 `);
- 
+
