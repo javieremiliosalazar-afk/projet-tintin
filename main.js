@@ -7,56 +7,50 @@ let reticle;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
 
-// Variables pour le modèle
-let modelToPlace = null;
-let modelPlaced = false;
+// Variables pour gérer le modèle
+let modelToPlace = null; // Le modèle en mémoire (chargé depuis le fichier)
+let currentModel = null; // L'instance de Tintin qui est actuellement dans la scène AR
 
 init();
 animate();
 
 function init() {
-    // 1. Scène (Sans fond pour voir la caméra)
     scene = new THREE.Scene();
 
-    // 2. Caméra
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-    // 3. Lumières
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     light.position.set(0.5, 1, 0.25);
     scene.add(light);
 
-    // 4. Renderer (alpha: true est OBLIGATOIRE pour voir la caméra)
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
     document.body.appendChild(renderer.domElement);
 
-    // 5. Bouton AR (On demande la fonctionnalité hit-test)
     document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
 
-    // 6. Chargement du Modèle 3D
+    // Chargement du Modèle 3D
     const loader = new GLTFLoader();
     loader.load(
         'model.glb', 
         function (gltf) {
             modelToPlace = gltf.scene;
-            modelToPlace.scale.set(0.5, 0.5, 0.5); // Ajuste la taille si besoin
+            // On garde la petite taille
+            modelToPlace.scale.set(0.05, 0.05, 0.05); 
         },
         undefined,
         function (error) {
             console.warn("Modèle model.glb introuvable. Utilisation d'un cube de remplacement.");
-            // Fallback : un cube si le modèle ne charge pas
             const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
             const material = new THREE.MeshNormalMaterial();
             modelToPlace = new THREE.Mesh(geometry, material);
-            // On remonte le cube pour qu'il soit posé SUR le sol, pas à moitié enfoncé
             modelToPlace.position.y = 0.1; 
         }
     );
 
-    // 7. Reticle (Le cercle vert pour viser le sol)
+    // Reticle (Le cercle vert pour viser le sol)
     const ringGeo = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
     const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
     reticle = new THREE.Mesh(ringGeo, ringMat);
@@ -64,7 +58,6 @@ function init() {
     reticle.visible = false;
     scene.add(reticle);
 
-    // 8. Contrôleur (Clic sur l'écran pour placer)
     const controller = renderer.xr.getController(0);
     controller.addEventListener('select', onSelect);
     scene.add(controller);
@@ -73,24 +66,21 @@ function init() {
 }
 
 function onSelect() {
-    // Si le cercle est visible, que le modèle est chargé et qu'il n'est pas encore placé
-    if (reticle.visible && modelToPlace && !modelPlaced) {
+    // Si le cercle vert est visible (une surface est détectée) et que le modèle est chargé
+    if (reticle.visible && modelToPlace) {
         
-        // On clone le modèle pour ne pas altérer l'original (bonne pratique)
-        const newModel = modelToPlace.clone();
+        // Si c'est le TOUT PREMIER clic, on instancie Tintin et on l'ajoute à la scène
+        if (!currentModel) {
+            currentModel = modelToPlace.clone();
+            scene.add(currentModel);
+        }
         
-        // On le place à la position du reticle
-        newModel.position.setFromMatrixPosition(reticle.matrix);
+        // À CHAQUE CLIC (premier ou suivants), on met à jour la position
+        currentModel.position.setFromMatrixPosition(reticle.matrix);
         
-        // On l'oriente vers la caméra
-        const lookPos = new THREE.Vector3(camera.position.x, newModel.position.y, camera.position.z);
-        newModel.lookAt(lookPos);
-        
-        scene.add(newModel);
-        
-        // On cache le reticle et on empêche d'en placer d'autres
-        reticle.visible = false;
-        modelPlaced = true; 
+        // On l'oriente vers la caméra (pour qu'il te regarde toujours)
+        const lookPos = new THREE.Vector3(camera.position.x, currentModel.position.y, camera.position.z);
+        currentModel.lookAt(lookPos);
     }
 }
 
@@ -105,12 +95,12 @@ function animate() {
 }
 
 function render(timestamp, frame) {
-    // Si on est en AR, qu'on a une frame, et que le modèle n'est pas encore placé
-    if (frame && !modelPlaced) {
+    // La modification est ici : on a enlevé la restriction "!modelPlaced".
+    // Le code du Hit Test s'exécute maintenant à chaque frame indéfiniment.
+    if (frame) {
         const referenceSpace = renderer.xr.getReferenceSpace();
         const session = renderer.xr.getSession();
 
-        // Demande d'accès au Hit Test
         if (hitTestSourceRequested === false) {
             session.requestReferenceSpace('viewer').then(function (referenceSpace) {
                 session.requestHitTestSource({ space: referenceSpace }).then(function (source) {
@@ -120,12 +110,15 @@ function render(timestamp, frame) {
             session.addEventListener('end', function () {
                 hitTestSourceRequested = false;
                 hitTestSource = null;
-                modelPlaced = false; // Permet de replacer si on relance la session
+                // On nettoie la scène si l'utilisateur quitte la vue AR
+                if (currentModel) {
+                    scene.remove(currentModel);
+                    currentModel = null; 
+                }
             });
             hitTestSourceRequested = true;
         }
 
-        // Calcul de la position du Hit Test
         if (hitTestSource) {
             const hitTestResults = frame.getHitTestResults(hitTestSource);
 
