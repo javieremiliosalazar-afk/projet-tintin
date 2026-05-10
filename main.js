@@ -86,7 +86,7 @@ function init() {
             // 2. MODIFICATION DU NIVEAU DU SOL
             // Si la géométrie invisible de Tintin le fait flotter, on le descend manuellement.
             // Une valeur négative l'enfonce dans le sol. Ajuste cette valeur (ex: -0.05, -0.1)
-            const decalageSol = -0.8; // Commence par -2cm
+            const decalageSol = -0.75; // Commence par -2cm
 
             rawModel.position.x = -scaledCenter.x;
             rawModel.position.y = -scaledBox.min.y + decalageSol; // Ajout du décalage ici
