@@ -61,7 +61,7 @@ body {
 /* ========================================= */
 #ARButton {
     /* Three.js met des styles par défaut, on les écrase avec !important */
-    background-color: #3498db !important; /* Bleu vif */
+    background-color: #000 !important; /* Bleu vif */
     color: white !important;
     border: 4px solid #000 !important;
     border-radius: 8px !important;
