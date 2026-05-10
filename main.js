@@ -1,336 +1,388 @@
-/* ══════════════════════════════════════
-   TINTIN AR — main.js
-   WebXR Hit-Test · Three.js r128 · GLTFLoader · ElevenLabs
-══════════════════════════════════════ */
+import * as THREE      from 'three';
+import { GLTFLoader }  from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-const GLTF_LOADER_CDN =
-  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+/* ─────────────────────────────────────────────────────
+   RENDERER
+───────────────────────────────────────────────────── */
+const canvas   = document.getElementById('ar-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.xr.enabled        = true;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+renderer.toneMapping       = THREE.ACESFilmicToneMapping;
 
-/* ─── State ─── */
-let xrSession        = null;
-let xrRefSpace       = null;
-let xrHitTestSource  = null;
-let renderer, scene, camera, clock;
-let reticle;
-let model            = null;   // le groupe Three.js du GLB
-let mixer            = null;   // AnimationMixer
-let placed           = false;
+/* ─────────────────────────────────────────────────────
+   SCENE / CAMERA / CLOCK
+───────────────────────────────────────────────────── */
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
+const clock  = new THREE.Clock();
 
-/* ════════════════════════════════════════
-   INIT
-════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────
+   LIGHTING
+───────────────────────────────────────────────────── */
+scene.add(new THREE.AmbientLight(0xffeedd, 1.8));
 
-document.addEventListener('DOMContentLoaded', () => {
-  injectScript(GLTF_LOADER_CDN);
+const sun = new THREE.DirectionalLight(0xffffff, 2.5);
+sun.position.set(2, 5, 3);
+sun.castShadow = true;
+sun.shadow.mapSize.setScalar(1024);
+scene.add(sun);
 
-  document.getElementById('btn-start')      .addEventListener('click', startAR);
-  document.getElementById('btn-parler')     .addEventListener('click', openConv);
-  document.getElementById('btn-close-conv') .addEventListener('click', closeConv);
-  document.getElementById('btn-back')       .addEventListener('click', showStart);
+/* ─────────────────────────────────────────────────────
+   RETICLE (cercle de placement)
+───────────────────────────────────────────────────── */
+const reticleGroup = new THREE.Group();
+reticleGroup.matrixAutoUpdate = false;
+reticleGroup.visible = false;
+scene.add(reticleGroup);
 
-  /* Désactive le bouton si WebXR indisponible */
-  if (!navigator.xr) {
-    const b = document.getElementById('btn-start');
-    b.textContent = '⚠ Non supporté';
-    b.style.background = '#888';
-    b.disabled = true;
-  }
+const reticleMat = new THREE.MeshBasicMaterial({
+  color: 0xf5c400,
+  side: THREE.DoubleSide,
+  transparent: true,
+  opacity: 0.9,
 });
 
-function injectScript(src) {
-  if (document.querySelector(`script[src="${src}"]`)) return;
-  const s   = document.createElement('script');
-  s.src     = src;
-  document.head.appendChild(s);
-}
+// Outer ring
+const rOuter = new THREE.RingGeometry(0.11, 0.135, 48);
+rOuter.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+reticleGroup.add(new THREE.Mesh(rOuter, reticleMat));
 
-/* ════════════════════════════════════════
-   SESSION AR
-════════════════════════════════════════ */
+// Inner dot
+const rInner = new THREE.CircleGeometry(0.025, 32);
+rInner.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+reticleGroup.add(new THREE.Mesh(rInner, reticleMat));
 
-async function startAR() {
-  if (!navigator.xr) { showNoAR(); return; }
+// 4 tick marks
+const tickPositions = [
+  [0, 0, -0.17, 0],
+  [0, 0,  0.17, Math.PI],
+  [-0.17, 0, 0,  Math.PI / 2],
+  [ 0.17, 0, 0, -Math.PI / 2],
+];
+tickPositions.forEach(([x, y, z, ry]) => {
+  const geo = new THREE.PlaneGeometry(0.008, 0.03);
+  geo.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+  const tick = new THREE.Mesh(geo, reticleMat);
+  tick.position.set(x, y, z);
+  tick.rotation.y = ry;
+  reticleGroup.add(tick);
+});
 
-  const ok = await navigator.xr
-    .isSessionSupported('immersive-ar')
-    .catch(() => false);
+let reticlePulse = 0;
 
-  if (!ok) { showNoAR(); return; }
+/* ─────────────────────────────────────────────────────
+   SHADOW PLANE
+───────────────────────────────────────────────────── */
+const shadowPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(2, 2),
+  new THREE.ShadowMaterial({ opacity: 0.3, transparent: true })
+);
+shadowPlane.rotation.x  = -Math.PI / 2;
+shadowPlane.receiveShadow = true;
+shadowPlane.visible     = false;
+scene.add(shadowPlane);
 
-  try {
-    xrSession = await navigator.xr.requestSession('immersive-ar', {
-      requiredFeatures: ['hit-test'],
-      optionalFeatures: ['dom-overlay'],
-      domOverlay: { root: document.getElementById('ar-ui') }
-    });
-  } catch (e) {
-    console.error(e);
-    showNoAR();
-    return;
-  }
+/* ─────────────────────────────────────────────────────
+   MODEL LOADER
+───────────────────────────────────────────────────── */
+let model       = null;
+let mixer       = null;
+let modelPlaced = false;
+let placedOnce  = false;
 
-  document.getElementById('screen-start').style.display = 'none';
-  document.getElementById('ar-ui').style.display        = 'block';
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
 
-  initThree();
-  await initXR();
+const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
 
-  xrSession.addEventListener('end', onSessionEnd);
-}
-
-function onSessionEnd() {
-  placed  = false;
-  mixer   = null;
-  model   = null;
-  renderer.setAnimationLoop(null);
-  xrHitTestSource = null;
-
-  document.getElementById('ar-ui')      .style.display  = 'none';
-  document.getElementById('btn-parler') .style.display  = 'none';
-  document.getElementById('hint')       .style.display  = 'block';
-  document.getElementById('conv-panel') .classList.remove('open');
-  showStart();
-}
-
-/* ════════════════════════════════════════
-   THREE.JS
-════════════════════════════════════════ */
-
-function initThree() {
-  clock = new THREE.Clock();
-
-  renderer = new THREE.WebGLRenderer({
-    canvas: document.getElementById('ar-canvas'),
-    alpha: true,
-    antialias: true
-  });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.xr.enabled = true;
-  renderer.xr.setReferenceSpaceType('local');
-  renderer.shadowMap.enabled = true;
-
-  scene  = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(
-    70, window.innerWidth / window.innerHeight, 0.01, 100
-  );
-
-  /* Éclairage */
-  scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-
-  const key = new THREE.DirectionalLight(0xffffff, 1.0);
-  key.position.set(2, 5, 2);
-  key.castShadow = true;
-  scene.add(key);
-
-  const fill = new THREE.DirectionalLight(0xc8e0ff, 0.35);
-  fill.position.set(-2, 2, -2);
-  scene.add(fill);
-
-  /* Réticule */
-  reticle = makeReticle();
-  scene.add(reticle);
-
-  window.addEventListener('resize', () => {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-  });
-
-  /* Charger le GLB immédiatement (en parallèle de l'init XR) */
-  loadModel();
-}
-
-/* ─── Réticule ─── */
-function makeReticle() {
-  const g = new THREE.Group();
-
-  const outer = new THREE.Mesh(
-    new THREE.RingGeometry(0.072, 0.088, 48),
-    new THREE.MeshBasicMaterial({ color: 0x1A1A2E, side: THREE.DoubleSide })
-  );
-  outer.rotation.x = -Math.PI / 2;
-
-  const inner = new THREE.Mesh(
-    new THREE.RingGeometry(0.050, 0.068, 48),
-    new THREE.MeshBasicMaterial({ color: 0xF9A825, side: THREE.DoubleSide })
-  );
-  inner.rotation.x = -Math.PI / 2;
-  inner.position.y = 0.001;
-
-  const dot = new THREE.Mesh(
-    new THREE.CircleGeometry(0.012, 24),
-    new THREE.MeshBasicMaterial({ color: 0xF9A825, side: THREE.DoubleSide })
-  );
-  dot.rotation.x = -Math.PI / 2;
-  dot.position.y = 0.002;
-
-  g.add(outer, inner, dot);
-  g.visible = false;
-  return g;
-}
-
-/* ─── Chargement model.glb ─── */
 function loadModel() {
-  waitForLoader(() => {
-    const loader = new THREE.GLTFLoader();
-
-    loader.load(
-      'model.glb',
-
+  return new Promise((resolve) => {
+    gltfLoader.load(
+      './tintin.glb',            // ← nom de ton fichier GLB
       (gltf) => {
-        const root = gltf.scene;
+        const m = gltf.scene;
+        m.visible = false;
 
-        /* Auto-scale → 0.5 m de hauteur */
-        const box  = new THREE.Box3().setFromObject(root);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        root.scale.setScalar(0.5 / size.y);
+        // Auto-scale → hauteur cible ~55 cm
+        const box       = new THREE.Box3().setFromObject(m);
+        const size      = box.getSize(new THREE.Vector3());
+        const maxDim    = Math.max(size.x, size.y, size.z);
+        const scale     = 0.55 / maxDim;
+        m.scale.setScalar(scale);
 
-        /* Aligner les pieds sur y = 0 */
-        const box2 = new THREE.Box3().setFromObject(root);
-        root.position.y -= box2.min.y;
+        // Centre le pivot à la base
+        box.setFromObject(m);
+        const center = box.getCenter(new THREE.Vector3());
+        m.position.x -= center.x;
+        m.position.z -= center.z;
+        m.position.y -= box.min.y;
 
-        /* Ombres */
-        root.traverse(n => {
-          if (n.isMesh) {
-            n.castShadow    = true;
-            n.receiveShadow = true;
+        m.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow    = true;
+            node.receiveShadow = true;
           }
         });
 
-        model = new THREE.Group();
-        model.add(root);
-        model.visible = false;
-        scene.add(model);
-
-        /* Animations */
-        if (gltf.animations.length) {
-          mixer = new THREE.AnimationMixer(root);
-          const action = mixer.clipAction(gltf.animations[0]);
-          action.play();
-          console.log('Clips:', gltf.animations.map((a,i) => `[${i}] ${a.name}`).join(', '));
+        // Lance la première animation si disponible
+        if (gltf.animations?.length) {
+          mixer = new THREE.AnimationMixer(m);
+          mixer.clipAction(gltf.animations[0]).play();
         }
 
-        console.log('model.glb chargé ✓');
+        scene.add(m);
+        model = m;
+        resolve();
       },
+      undefined,
+      (err) => {
+        // Fallback : silhouette bleue + tête jaune
+        console.warn('GLB introuvable, placeholder utilisé :', err);
+        const g = new THREE.Group();
 
-      (xhr) => {
-        if (xhr.total)
-          console.log(`GLB ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`);
-      },
+        const body = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.08, 0.3, 4, 8),
+          new THREE.MeshStandardMaterial({ color: 0x1a3a7c })
+        );
+        body.position.y = 0.25;
+        body.castShadow = true;
 
-      (err) => console.error('Erreur GLB :', err)
+        const head = new THREE.Mesh(
+          new THREE.SphereGeometry(0.1, 16, 16),
+          new THREE.MeshStandardMaterial({ color: 0xf5c400 })
+        );
+        head.position.y = 0.52;
+        head.castShadow = true;
+
+        g.add(body, head);
+        g.visible = false;
+        scene.add(g);
+        model = g;
+        resolve();
+      }
     );
   });
 }
 
-function waitForLoader(cb) {
-  if (typeof THREE.GLTFLoader !== 'undefined') { cb(); return; }
-  setTimeout(() => waitForLoader(cb), 80);
+/* ─────────────────────────────────────────────────────
+   EASING
+───────────────────────────────────────────────────── */
+function easeOutBack(x) {
+  const c1 = 1.70158, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
 }
 
-/* ════════════════════════════════════════
-   XR
-════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────
+   XR STATE
+───────────────────────────────────────────────────── */
+let xrSession       = null;
+let xrRefSpace      = null;
+let xrHitTestSource = null;
 
-async function initXR() {
-  renderer.xr.setSession(xrSession);
-  xrSession.addEventListener('selectstart', onTap);
+/* ─────────────────────────────────────────────────────
+   START AR
+───────────────────────────────────────────────────── */
+document.getElementById('start-btn').addEventListener('click', async () => {
 
-  const viewer    = await xrSession.requestReferenceSpace('viewer');
-  xrHitTestSource = await xrSession.requestHitTestSource({ space: viewer });
-  xrRefSpace      = await xrSession.requestReferenceSpace('local');
+  if (!navigator.xr) {
+    showNotSupported('WebXR non disponible sur ce navigateur.');
+    return;
+  }
 
-  renderer.setAnimationLoop(renderLoop);
+  const supported = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
+  if (!supported) {
+    showNotSupported('AR non supportée sur cet appareil.');
+    return;
+  }
+
+  document.getElementById('loading').style.display = 'flex';
+
+  await loadModel();
+
+  try {
+    xrSession = await navigator.xr.requestSession('immersive-ar', {
+      requiredFeatures: ['hit-test'],
+      optionalFeatures: ['dom-overlay', 'light-estimation'],
+      domOverlay: { root: document.body },
+    });
+
+    renderer.xr.setReferenceSpaceType('local');
+    await renderer.xr.setSession(xrSession);
+
+    xrRefSpace      = await xrSession.requestReferenceSpace('local');
+    const viewer    = await xrSession.requestReferenceSpace('viewer');
+    xrHitTestSource = await xrSession.requestHitTestSource({ space: viewer });
+
+    xrSession.addEventListener('end', onSessionEnd);
+
+    document.getElementById('loading').style.display    = 'none';
+    document.getElementById('landing').style.display    = 'none';
+    document.getElementById('ui-overlay').style.display = 'flex';
+
+    renderer.setAnimationLoop(render);
+
+  } catch (err) {
+    document.getElementById('loading').style.display = 'none';
+    showNotSupported('Erreur : ' + err.message);
+  }
+});
+
+function showNotSupported(msg) {
+  const el = document.getElementById('not-supported');
+  el.innerHTML = '⚠️ ' + msg;
+  el.style.display = 'block';
 }
 
-/* ════════════════════════════════════════
+/* ─────────────────────────────────────────────────────
+   PLACEMENT AU TAP
+───────────────────────────────────────────────────── */
+canvas.addEventListener('click', () => {
+  if (!reticleGroup.visible || !model) return;
+
+  const pos  = new THREE.Vector3();
+  const quat = new THREE.Quaternion();
+  const scl  = new THREE.Vector3();
+  reticleGroup.matrix.decompose(pos, quat, scl);
+
+  model.position.copy(pos);
+  model.quaternion.copy(quat);
+  model.visible = true;
+  modelPlaced   = true;
+  reticleGroup.visible = false;
+
+  shadowPlane.position.copy(pos);
+  shadowPlane.visible = true;
+
+  // Animation pop-in
+  const baseScale = model.scale.x;
+  model.scale.setScalar(0);
+  let t = 0;
+  const pop = setInterval(() => {
+    t += 0.07;
+    model.scale.setScalar(Math.min(easeOutBack(t), 1.0) * baseScale);
+    if (t >= 1) clearInterval(pop);
+  }, 16);
+
+  if (!placedOnce) {
+    placedOnce = true;
+    const instr = document.getElementById('instructions');
+    instr.textContent = '✅ Approchez-vous de Tintin !';
+    setTimeout(() => { instr.style.opacity = '0'; }, 3000);
+    setTimeout(() => { instr.style.display = 'none'; }, 3500);
+  }
+});
+
+/* ─────────────────────────────────────────────────────
+   BOUTON PARLER (ElevenLabs)
+───────────────────────────────────────────────────── */
+const talkBtn   = document.getElementById('talk-btn');
+const talkIcon  = document.getElementById('talk-icon');
+const talkLabel = document.getElementById('talk-label');
+const elWrap    = document.getElementById('el-wrap');
+const bubble    = document.getElementById('speech-bubble');
+let talkActive  = false;
+
+talkBtn.addEventListener('click', () => {
+  talkActive = !talkActive;
+
+  if (talkActive) {
+    elWrap.style.display = 'block';
+    talkBtn.classList.add('active');
+    talkIcon.textContent  = '🔴';
+    talkLabel.textContent = 'EN COURS';
+    bubble.style.display  = 'block';
+
+    // Ouvre automatiquement le widget ElevenLabs
+    setTimeout(() => {
+      const widget = document.querySelector('elevenlabs-convai');
+      if (!widget) return;
+      const btn = widget.shadowRoot?.querySelector('button');
+      if (btn) btn.click();
+      else widget.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }, 600);
+
+  } else {
+    elWrap.style.display  = 'none';
+    talkBtn.classList.remove('active');
+    talkIcon.textContent  = '🎙';
+    talkLabel.textContent = 'PARLER';
+    bubble.style.display  = 'none';
+  }
+});
+
+/* ─────────────────────────────────────────────────────
+   BOUTON STOP
+───────────────────────────────────────────────────── */
+document.getElementById('stop-btn').addEventListener('click', () => {
+  xrSession?.end();
+});
+
+/* ─────────────────────────────────────────────────────
+   FIN DE SESSION XR
+───────────────────────────────────────────────────── */
+function onSessionEnd() {
+  xrSession = xrHitTestSource = null;
+  renderer.setAnimationLoop(null);
+
+  // UI reset
+  document.getElementById('ui-overlay').style.display   = 'none';
+  document.getElementById('landing').style.display      = 'flex';
+  document.getElementById('instructions').style.opacity = '1';
+  document.getElementById('instructions').style.display = 'block';
+  document.getElementById('instructions').textContent   =
+    '👆 Pointez une surface et touchez pour placer Tintin';
+
+  elWrap.style.display  = 'none';
+  bubble.style.display  = 'none';
+  talkActive = false;
+  talkBtn.classList.remove('active');
+  talkIcon.textContent  = '🎙';
+  talkLabel.textContent = 'PARLER';
+
+  if (model) model.visible = false;
+  shadowPlane.visible  = false;
+  modelPlaced = placedOnce = false;
+  reticleGroup.visible = false;
+}
+
+/* ─────────────────────────────────────────────────────
    BOUCLE DE RENDU
-════════════════════════════════════════ */
-
-function renderLoop(_, frame) {
-  if (!frame) return;
-
-  const dt = clock.getDelta();
-  if (mixer) mixer.update(dt);
-
-  /* Hit-test → déplacer le réticule */
-  if (xrHitTestSource && !placed) {
+───────────────────────────────────────────────────── */
+function render(_ts, frame) {
+  if (frame && xrHitTestSource) {
     const hits = frame.getHitTestResults(xrHitTestSource);
-    if (hits.length) {
+
+    if (hits.length && !modelPlaced) {
       const pose = hits[0].getPose(xrRefSpace);
       if (pose) {
-        reticle.visible = true;
-        reticle.position.set(
-          pose.transform.position.x,
-          pose.transform.position.y,
-          pose.transform.position.z
-        );
-        reticle.quaternion.set(
-          pose.transform.orientation.x,
-          pose.transform.orientation.y,
-          pose.transform.orientation.z,
-          pose.transform.orientation.w
-        );
+        reticleGroup.visible = true;
+        reticleGroup.matrix.fromArray(pose.transform.matrix);
+
+        // Pulsation du reticle
+        reticlePulse += 0.06;
+        const s = 1 + Math.sin(reticlePulse) * 0.12;
+        reticleGroup.children.forEach((c) => c.scale.setScalar(s));
       }
-    } else {
-      reticle.visible = false;
+    } else if (!modelPlaced) {
+      reticleGroup.visible = false;
     }
   }
 
+  if (mixer) mixer.update(clock.getDelta());
   renderer.render(scene, camera);
 }
 
-/* ════════════════════════════════════════
-   TAP → PLACER LE MODÈLE
-════════════════════════════════════════ */
-
-function onTap() {
-  if (!reticle.visible || placed) return;
-  if (!model) return; /* GLB pas encore chargé */
-
-  placed = true;
-
-  model.position.copy(reticle.position);
-  model.visible = true;
-  reticle.visible = false;
-
-  /* UI */
-  document.getElementById('hint').style.display      = 'none';
-  document.getElementById('btn-parler').style.display = 'flex';
-
-  const tag = document.getElementById('placed-tag');
-  tag.style.display = 'block';
-  setTimeout(() => { tag.style.display = 'none'; }, 2500);
-
-  flash();
-}
-
-function flash() {
-  const el = document.getElementById('flash');
-  el.style.animation = 'none';
-  el.offsetHeight;
-  el.style.animation = 'flash .3s ease-out forwards';
-}
-
-/* ════════════════════════════════════════
-   PANEL ELEVENLABS
-════════════════════════════════════════ */
-
-function openConv()  { document.getElementById('conv-panel').classList.add('open'); }
-function closeConv() { document.getElementById('conv-panel').classList.remove('open'); }
-
-/* ════════════════════════════════════════
-   NAVIGATION ÉCRANS
-════════════════════════════════════════ */
-
-function showStart() {
-  document.getElementById('screen-start').style.display = 'flex';
-  document.getElementById('screen-noar') .style.display = 'none';
-}
-
-function showNoAR() {
-  document.getElementById('screen-start').style.display = 'none';
-  document.getElementById('screen-noar') .style.display = 'flex';
-}
+/* ─────────────────────────────────────────────────────
+   RESIZE
+───────────────────────────────────────────────────── */
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
