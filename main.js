@@ -25,9 +25,9 @@ const CONFIG = {
   MODEL_SCALE:         1.0,
  
   // ElevenLabs
-  ELEVENLABS_API_KEY:  "sk_f2a0d378048edc5ceb7108296de4e05a261ca4eb4bff8ed2",        // ← Collez votre nouvelle clé ici
-  ELEVENLABS_AGENT_ID: "agent_6201kncf8mfdey5s99wfnbgp952a",       // ← Collez votre Agent ID ici
-  ELEVENLABS_VOICE_ID: "1Z9SUkvx5gRIEOA9KIRP",       // ← Collez votre Voice ID ici
+  ELEVENLABS_API_KEY:  'sk_f2a0d378048edc5ceb7108296de4e05a261ca4eb4bff8ed2',        // ← Collez votre nouvelle clé ici
+  ELEVENLABS_AGENT_ID: 'agent_6201kncf8mfdey5s99wfnbgp952a',       // ← Collez votre Agent ID ici
+  ELEVENLABS_VOICE_ID: '1Z9SUkvx5gRIEOA9KIRP',       // ← Collez votre Voice ID ici
  
   // Audio
   AUDIO_SAMPLE_RATE:   16000,
