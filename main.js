@@ -54,7 +54,7 @@ function init() {
     // ==========================================
     const loader = new GLTFLoader();
     loader.load(
-        'model.glb', // Ton fichier 3D
+        '2.glb', // Ton fichier 3D
         function (gltf) {
             const rawModel = gltf.scene;
 
