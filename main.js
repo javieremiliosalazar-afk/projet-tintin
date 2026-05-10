@@ -13,10 +13,10 @@ let hitTestSourceRequested = false;
 let modelToPlace = null; 
 let currentModel = null; 
 
-// --- NOUVEAU : Variables pour l'animation ---
-let mixer = null; // Le lecteur d'animation
-let animationAction = null; // L'animation en elle-même
-const clock = new THREE.Clock(); // L'horloge pour gérer le temps
+// Variables pour l'animation
+let mixer = null; 
+let animationAction = null; 
+const clock = new THREE.Clock(); 
 
 init();
 animate();
@@ -41,7 +41,27 @@ function init() {
     renderer.xr.enabled = true; 
     document.body.appendChild(renderer.domElement);
 
+    // Création du bouton AR
     document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+
+    // --- GESTION DE LA LANDING PAGE BD ---
+    renderer.xr.addEventListener('sessionstart', () => {
+        // Quand l'AR démarre, on cache la page d'accueil
+        const landingPage = document.getElementById('landing-page');
+        if(landingPage) landingPage.style.display = 'none';
+    });
+
+    renderer.xr.addEventListener('sessionend', () => {
+        // Quand on quitte l'AR, on réaffiche la page d'accueil
+        const landingPage = document.getElementById('landing-page');
+        if(landingPage) landingPage.style.display = 'flex';
+        
+        // Nettoyage de la scène
+        if (currentModel) {
+            scene.remove(currentModel);
+            currentModel = null;
+        }
+    });
 
     // ==========================================
     // 4. CHARGEMENT ET RECADRAGE DU MODÈLE 3D
@@ -55,6 +75,7 @@ function init() {
             const box = new THREE.Box3().setFromObject(rawModel);
             const size = box.getSize(new THREE.Vector3());
 
+            // Tu avais réglé sur 0.8 (80 cm)
             const targetHeight = 0.8; 
             const scaleFactor = targetHeight / size.y;
             rawModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
@@ -69,16 +90,11 @@ function init() {
             modelToPlace = new THREE.Group();
             modelToPlace.add(rawModel);
             
-            // --- NOUVEAU : Préparation de l'animation ---
-            // On vérifie si le fichier contient bien des animations
+            // Préparation de l'animation
             if (gltf.animations && gltf.animations.length > 0) {
-                // On crée le lecteur lié au modèle
                 mixer = new THREE.AnimationMixer(rawModel);
-                // On prépare la toute première animation du fichier (l'index 0)
                 animationAction = mixer.clipAction(gltf.animations[0]);
                 console.log("Animation trouvée et prête !");
-            } else {
-                console.warn("Aucune animation trouvée dans ce fichier 2.glb.");
             }
 
             console.log("Modèle chargé, redimensionné et prêt !");
@@ -109,23 +125,25 @@ function init() {
     window.addEventListener('resize', onWindowResize);
 }
 
-// Fonction appelée quand tu touches l'écran
+// Fonction appelée quand on touche l'écran
 function onSelect() {
     if (reticle.visible && modelToPlace) {
         
-        // --- NOUVEAU : On ne clone plus, on place le modèle original ---
+        // Au tout premier clic
         if (!currentModel) {
-            currentModel = modelToPlace; // Retrait du .clone()
+            currentModel = modelToPlace; 
             scene.add(currentModel);
             
-            // On active l'animation au tout premier clic !
+            // On active l'animation
             if (animationAction) {
                 animationAction.play();
             }
         }
         
+        // On déplace le modèle sur le cercle vert
         currentModel.position.setFromMatrixPosition(reticle.matrix);
         
+        // On le fait regarder vers la caméra
         const lookPos = new THREE.Vector3(camera.position.x, currentModel.position.y, camera.position.z);
         currentModel.lookAt(lookPos);
     }
@@ -145,10 +163,10 @@ function animate() {
 // 7. BOUCLE DE RENDU ET CALCUL DU SOL
 // ==========================================
 function render(timestamp, frame) {
-    // --- NOUVEAU : Mise à jour du temps pour l'animation ---
-    const delta = clock.getDelta(); // Temps écoulé depuis la dernière image
+    // Mise à jour de l'animation à chaque image
+    const delta = clock.getDelta(); 
     if (mixer) {
-        mixer.update(delta); // Fait avancer l'animation
+        mixer.update(delta); 
     }
 
     if (frame) {
@@ -164,10 +182,6 @@ function render(timestamp, frame) {
             session.addEventListener('end', function () {
                 hitTestSourceRequested = false;
                 hitTestSource = null;
-                if (currentModel) {
-                    scene.remove(currentModel);
-                    currentModel = null; 
-                }
             });
             hitTestSourceRequested = true;
         }
