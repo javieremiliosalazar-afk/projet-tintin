@@ -1,221 +1,94 @@
-/* ═══════════════════════════════════════════════
-   WEBAR — style.css
-   Aesthetic: Sci-Fi HUD / Holographic Interface
-   ═══════════════════════════════════════════════ */
-
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=Share+Tech+Mono&display=swap');
-
-/* ── Variables ────────────────────────────────── */
-:root {
-  --cyan:      #00f5ff;
-  --cyan-dim:  #00c8d4;
-  --cyan-glow: rgba(0, 245, 255, 0.25);
-  --bg-dark:   #030d12;
-  --bg-panel:  rgba(0, 18, 26, 0.82);
-  --border:    rgba(0, 245, 255, 0.3);
-  --text:      #c8f4ff;
-  --text-dim:  rgba(200, 244, 255, 0.55);
-  --danger:    #ff4060;
-  --font-hud:  'Orbitron', monospace;
-  --font-mono: 'Share Tech Mono', monospace;
-  --radius:    6px;
-  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+/* Reset basique */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1a1a1a;
+    color: #ffffff;
 }
 
-/* ── Reset ────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html, body {
-  width: 100%; height: 100%;
-  overflow: hidden;
-  background: var(--bg-dark);
-  font-family: var(--font-mono);
-  color: var(--text);
-  -webkit-tap-highlight-color: transparent;
+/* Landing Page Sobre */
+#landing-page {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #2c3e50, #000000);
+    z-index: 10;
+    text-align: center;
+    transition: opacity 0.5s ease-out;
 }
 
-/* ── Canvas ───────────────────────────────────── */
-#ar-canvas {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  z-index: 0;
+.landing-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
 }
 
-/* ── Overlay ──────────────────────────────────── */
-#overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  pointer-events: none;
+.landing-content p {
+    font-size: 1.1rem;
+    color: #cccccc;
+    margin-bottom: 30px;
 }
 
-#overlay button,
-#overlay #ar-button-container {
-  pointer-events: auto;
+/* Conteneur pour le bouton Three.js */
+#ar-button-container button {
+    background-color: #007bff !important;
+    border-radius: 8px !important;
+    padding: 15px 30px !important;
+    font-size: 1.2rem !important;
+    font-weight: bold !important;
+    border: none !important;
+    opacity: 1 !important;
 }
 
-/* ── Header ───────────────────────────────────── */
-#header {
-  position: absolute;
-  top: 18px; left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 40px;
-  padding: 8px 20px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 0 24px var(--cyan-glow);
+/* DOM Overlay pour le mode AR */
+#ar-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; /* Laisse passer les clics vers le canvas 3D par défaut */
+    z-index: 20;
+    display: none; /* Géré par le JS */
 }
 
-#logo {
-  font-family: var(--font-hud);
-  font-weight: 900;
-  font-size: 0.85rem;
-  letter-spacing: 0.18em;
-  color: var(--cyan);
-  text-shadow: 0 0 12px var(--cyan);
+/* Bouton Parler */
+#talk-btn {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    pointer-events: auto; /* Rend le bouton cliquable */
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: background-color 0.3s;
 }
 
-#status-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  color: var(--text-dim);
+#talk-btn:hover {
+    background-color: #c0392b;
 }
 
-#status-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--text-dim);
-  transition: background var(--transition), box-shadow var(--transition);
+/* Conteneur Eleven Labs en bas à droite */
+#eleven-widget-container {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    pointer-events: auto; /* Rend le widget interactif */
+    background: white;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
-#status-dot.active {
-  background: var(--cyan);
-  box-shadow: 0 0 8px var(--cyan);
-  animation: pulse-dot 1.4s ease-in-out infinite;
-}
-
-#status-dot.error {
-  background: var(--danger);
-  box-shadow: 0 0 8px var(--danger);
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
-}
-
-/* ── AR Button Container ──────────────────────── */
-#ar-button-container {
-  position: absolute;
-  bottom: 48px; left: 50%;
-  transform: translateX(-50%);
-}
-
-/* Override Three.js ARButton style */
-#ar-button-container > button,
-#ARButton {
-  background: var(--bg-panel) !important;
-  border: 1px solid var(--cyan) !important;
-  border-radius: var(--radius) !important;
-  color: var(--cyan) !important;
-  font-family: var(--font-hud) !important;
-  font-size: 0.75rem !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.15em !important;
-  padding: 14px 36px !important;
-  text-transform: uppercase !important;
-  cursor: pointer !important;
-  backdrop-filter: blur(12px) !important;
-  box-shadow: 0 0 24px var(--cyan-glow) !important;
-  transition: all 0.25s ease !important;
-  white-space: nowrap !important;
-}
-
-#ar-button-container > button:hover {
-  background: rgba(0,245,255,0.12) !important;
-  box-shadow: 0 0 40px var(--cyan-glow) !important;
-}
-
-/* ── Placement Hint ───────────────────────────── */
-#placement-hint {
-  position: absolute;
-  bottom: 110px; left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 40px;
-  padding: 8px 18px;
-  font-size: 0.68rem;
-  color: var(--text-dim);
-  text-align: center;
-  backdrop-filter: blur(10px);
-  white-space: nowrap;
-  animation: hint-pulse 2s ease-in-out infinite;
-}
-
-@keyframes hint-pulse {
-  0%, 100% { opacity: 0.7; }
-  50%       { opacity: 1; }
-}
-
-/* ── Footer ───────────────────────────────────── */
-#footer {
-  position: absolute;
-  bottom: 14px; left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.58rem;
-  letter-spacing: 0.1em;
-  color: var(--text-dim);
-  text-align: center;
-  white-space: nowrap;
-}
-
-/* ── ElevenLabs Widget ────────────────────────── */
-elevenlabs-convai {
-  position: fixed;
-  bottom: 24px;
-  left: 20px;
-  z-index: 100;
-}
-
-/* ── Utility ──────────────────────────────────── */
-.hidden { display: none !important; }
-
-/* ── Scanline FX ──────────────────────────────── */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 245, 255, 0.012) 2px,
-    rgba(0, 245, 255, 0.012) 4px
-  );
-  pointer-events: none;
-  z-index: 999;
-}
-
-/* ── Corner decoration ────────────────────────── */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0;
-  width: 80px; height: 80px;
-  border-top: 2px solid var(--cyan);
-  border-left: 2px solid var(--cyan);
-  opacity: 0.3;
-  pointer-events: none;
-  z-index: 999;
+/* Classe utilitaire */
+.hidden {
+    display: none !important;
 }
