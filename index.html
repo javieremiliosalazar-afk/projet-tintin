@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tintin WebXR - Agent Conversationnel</title>
+    <title>WebXR AR - Hit Test</title>
     <link rel="stylesheet" href="style.css">
     
-    <!-- Script ElevenLabs ConvAI -->
-    <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
-
     <!-- Import Map pour Three.js -->
     <script type="importmap">
         {
@@ -20,30 +17,6 @@
     </script>
 </head>
 <body>
-
-    <!-- Landing Page -->
-    <div id="landing-page">
-        <div class="landing-content">
-            <h1>Expérience Tintin IA</h1>
-            <p>Placez Tintin dans votre environnement et discutez avec lui.</p>
-            <!-- Le bouton AR généré par Three.js viendra s'insérer ici -->
-            <div id="ar-button-container"></div>
-        </div>
-    </div>
-
-    <!-- Interface utilisateur superposée en AR (DOM Overlay) -->
-    <div id="ar-overlay">
-        <!-- Bouton Parler -->
-        <button id="talk-btn" style="display: none;">Parler à Tintin</button>
-
-        <!-- Widget ElevenLabs (caché par défaut) -->
-        <div id="eleven-widget-container" class="hidden">
-            <!-- REMPLACE PAR TON AGENT ID -->
-            <elevenlabs-convai agent-id="agent_6201kncf8mfdey5s99wfnbgp952a"></elevenlabs-convai>
-        </div>
-    </div>
-
-    <!-- Script principal -->
     <script type="module" src="main.js"></script>
 </body>
 </html>
