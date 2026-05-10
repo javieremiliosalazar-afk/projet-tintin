@@ -2,72 +2,59 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>WebAR Assistant</title>
+  <link rel="stylesheet" href="style.css" />
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, user-scalable=no"
-  />
-
-  <title>BD XR Experience</title>
-
-  <link rel="stylesheet" href="./style.css" />
-
+  <!-- Three.js via Import Map -->
   <script type="importmap">
   {
     "imports": {
-      "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
-      "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
     }
   }
   </script>
-</head>
 
+  <!-- ElevenLabs ConvAI Widget -->
+  <script src="https://elevenlabs.io/convai-widget/index.js" async></script>
+</head>
 <body>
 
-  <!-- LANDING PAGE -->
-  <div id="landing">
+  <!-- Canvas WebXR -->
+  <canvas id="ar-canvas"></canvas>
 
-    <div class="comic-panel">
+  <!-- Overlay UI -->
+  <div id="overlay">
 
-      <div class="comic-bubble">
-        Une aventure XR incroyable !
-      </div>
+    <!-- Header -->
+    <div id="header">
+      <span id="logo">◈ WebAR</span>
+      <span id="status-badge">
+        <span id="status-dot"></span>
+        <span id="status-text">Prêt</span>
+      </span>
+    </div>
 
-      <h1>
-        BD XR
-      </h1>
+    <!-- Bouton Start AR -->
+    <div id="ar-button-container"></div>
 
-      <p>
-        Placez un personnage animé dans votre environnement
-        et discutez avec lui grâce à l'IA vocale.
-      </p>
+    <!-- Indication placement -->
+    <div id="placement-hint" class="hidden">
+      <span>↕ Déplacez l'appareil pour détecter une surface, puis appuyez pour placer</span>
+    </div>
 
-      <button id="enterButton">
-        Entrer dans l'expérience
-      </button>
-
-      <div class="instructions">
-        📱 Smartphone compatible WebXR requis
-      </div>
-
+    <!-- Footer -->
+    <div id="footer">
+      <span>ElevenLabs ConvAI · WebXR AR · Three.js r160</span>
     </div>
 
   </div>
 
-  <!-- UI XR -->
-<div id="uiOverlay">
+  <!-- ElevenLabs Widget — remplacez VOTRE_AGENT_ID -->
+  <elevenlabs-convai agent-id="VOTRE_AGENT_ID"></elevenlabs-convai>
 
-  <button id="talkButton">
-    Parler
-  </button>
-
-</div>
-
-  <div id="scanText">
-    Déplacez votre téléphone pour détecter une surface...
-  </div>
-
-  <script type="module" src="./main.js"></script>
-
+  <script type="module" src="main.js"></script>
 </body>
 </html>
+
