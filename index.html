@@ -1,78 +1,69 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Tintin AR</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+  <meta charset="UTF-8" />
 
-  <!-- ── LANDING ─────────────────────────────────── -->
-  <div id="landing">
-    <div class="halftone"></div>
-    <div class="landing-card">
-      <span class="badge">✦ EXPÉRIENCE AR ✦</span>
-      <h1>TINTIN</h1>
-      <p class="sub">
-        Placez Tintin dans votre monde réel<br>
-        et discutez avec lui en direct !
-      </p>
-      <button class="btn-start" id="start-btn">
-        <span>▶</span> COMMENCER
-      </button>
-      <div id="not-supported">
-        ⚠️ WebXR AR non supporté.<br>
-        Utilisez <strong>Chrome sur Android</strong> ou <strong>Safari 16+ sur iOS</strong>.
-      </div>
-    </div>
-  </div>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, user-scalable=no"
+  />
 
-  <!-- ── LOADING ──────────────────────────────────── -->
-  <div id="loading">
-    <div class="spinner"></div>
-    <p>Chargement de Tintin…</p>
-  </div>
+  <title>BD XR Experience</title>
 
-  <!-- ── AR CANVAS ────────────────────────────────── -->
-  <canvas id="ar-canvas"></canvas>
+  <link rel="stylesheet" href="./style.css" />
 
-  <!-- ── AR UI OVERLAY ────────────────────────────── -->
-  <div id="ui-overlay">
-    <div id="top-bar">
-      <div id="instructions">👆 Pointez une surface et touchez pour placer Tintin</div>
-    </div>
-    <div id="bottom-controls">
-      <button class="ar-btn" id="talk-btn">
-        <span id="talk-icon">🎙</span>
-        <span id="talk-label">PARLER</span>
-      </button>
-      <button class="ar-btn" id="stop-btn">✕ STOP</button>
-    </div>
-  </div>
-
-  <!-- ── SPEECH BUBBLE ─────────────────────────────── -->
-  <div id="speech-bubble">🎙 Conversation en cours…</div>
-
-  <!-- ── ELEVENLABS ─────────────────────────────────── -->
-  <div id="el-wrap">
-    <elevenlabs-convai agent-id="agent_6201kncf8mfdey5s99wfnbgp952a"></elevenlabs-convai>
-  </div>
-  <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
-
-  <!-- ── THREE.JS IMPORT MAP ───────────────────────── -->
   <script type="importmap">
   {
     "imports": {
-      "three":         "https://unpkg.com/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
     }
   }
   </script>
+</head>
 
-  <script type="module" src="main.js"></script>
+<body>
+
+  <!-- LANDING PAGE -->
+  <div id="landing">
+
+    <div class="comic-panel">
+
+      <div class="comic-bubble">
+        Une aventure XR incroyable !
+      </div>
+
+      <h1>
+        BD XR
+      </h1>
+
+      <p>
+        Placez un personnage animé dans votre environnement
+        et discutez avec lui grâce à l'IA vocale.
+      </p>
+
+      <button id="enterButton">
+        Entrer dans l'expérience
+      </button>
+
+      <div class="instructions">
+        📱 Smartphone compatible WebXR requis
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- UI XR -->
+  <button id="talkButton">
+    Parler
+  </button>
+
+  <div id="scanText">
+    Déplacez votre téléphone pour détecter une surface...
+  </div>
+
+  <script type="module" src="./main.js"></script>
+
 </body>
 </html>
