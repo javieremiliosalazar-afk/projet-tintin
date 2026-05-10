@@ -64,7 +64,7 @@ function init() {
             const size = box.getSize(new THREE.Vector3());
 
             // 2. On force sa hauteur à exactement 0.2 mètres (20 cm)
-            const targetHeight = 1; 
+            const targetHeight = 0.8; 
             const scaleFactor = targetHeight / size.y;
             rawModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
