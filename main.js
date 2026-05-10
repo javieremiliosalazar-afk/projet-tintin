@@ -38,7 +38,7 @@ function init() {
         function (gltf) {
             modelToPlace = gltf.scene;
             // On garde la petite taille
-            modelToPlace.scale.set(0.005, 0.005, 0.005); 
+            modelToPlace.scale.set(0.0001, 0.0001, 0.0001); 
         },
         undefined,
         function (error) {
