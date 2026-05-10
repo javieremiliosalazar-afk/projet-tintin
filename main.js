@@ -3,145 +3,95 @@ import { ARButton } from 'three/addons/webxr/ARButton.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 let camera, scene, renderer;
-let reticle, model, mixer;
+let reticle;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
-let modelPlaced = false;
 
-const clock = new THREE.Clock();
+// Variables pour le modèle
+let modelToPlace = null;
+let modelPlaced = false;
 
 init();
 animate();
 
 function init() {
-    // 1. Setup de la scène et de la caméra
+    // 1. Scène (Sans fond pour voir la caméra)
     scene = new THREE.Scene();
-    // CRUCIAL : Ne PAS définir de couleur de fond pour la scène, 
-    // sinon ça masque le flux de la caméra en AR.
-    // scene.background = new THREE.Color(0x000000); // <- Ne pas faire ça !
 
+    // 2. Caméra
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-    // 2. Lumières
+    // 3. Lumières
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     light.position.set(0.5, 1, 0.25);
     scene.add(light);
 
-    // 3. Setup du Renderer avec WebXR
-    // CRUCIAL : alpha: true est indispensable pour voir le flux vidéo derrière le canvas WebGL
+    // 4. Renderer (alpha: true est OBLIGATOIRE pour voir la caméra)
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
-    
-    // S'assurer que le clear color est transparent
-    renderer.setClearColor(0x000000, 0); 
     document.body.appendChild(renderer.domElement);
 
-    // 4. Bouton AR avec DOM Overlay
-    const arOverlay = document.getElementById('ar-overlay');
-    const arButtonContainer = document.getElementById('ar-button-container');
-    
-    const arButton = ARButton.createButton(renderer, {
-        requiredFeatures: ['hit-test'],
-        optionalFeatures: ['dom-overlay'],
-        domOverlay: { root: arOverlay }
-    });
-    arButton.textContent = "Start AR";
-    arButtonContainer.appendChild(arButton);
+    // 5. Bouton AR (On demande la fonctionnalité hit-test)
+    document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
 
-    renderer.xr.addEventListener('sessionstart', () => {
-        document.getElementById('landing-page').style.display = 'none';
-        arOverlay.style.display = 'block';
-    });
-    renderer.xr.addEventListener('sessionend', () => {
-        document.getElementById('landing-page').style.display = 'flex';
-        arOverlay.style.display = 'none';
-        modelPlaced = false;
-        if (model) scene.remove(model);
-        document.getElementById('talk-btn').style.display = 'none';
-        document.getElementById('eleven-widget-container').classList.add('hidden');
-    });
-
-    // 5. Chargement du Modèle 3D avec Fallback
+    // 6. Chargement du Modèle 3D
     const loader = new GLTFLoader();
-    
-    // Fonction pour créer un cylindre rouge de secours
-    function createFallbackCylinder() {
-        console.warn("Utilisation du cylindre de secours.");
-        const geometry = new THREE.CylinderGeometry(0.2, 0.2, 1, 32);
-        const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-        const cylinder = new THREE.Mesh(geometry, material);
-        // Ajuster la position pour que la base soit sur le sol (hit test)
-        cylinder.position.y = 0.5; 
-        
-        // Créer un groupe pour l'utiliser comme "modèle" principal
-        model = new THREE.Group();
-        model.add(cylinder);
-    }
-
-    loader.load('model.glb', function (gltf) {
-        model = gltf.scene;
-        model.scale.set(0.5, 0.5, 0.5); 
-        
-        if (gltf.animations && gltf.animations.length > 0) {
-            mixer = new THREE.AnimationMixer(model);
-            const idleAction = mixer.clipAction(gltf.animations[0]);
-            idleAction.play();
+    loader.load(
+        'model.glb', 
+        function (gltf) {
+            modelToPlace = gltf.scene;
+            modelToPlace.scale.set(0.5, 0.5, 0.5); // Ajuste la taille si besoin
+        },
+        undefined,
+        function (error) {
+            console.warn("Modèle model.glb introuvable. Utilisation d'un cube de remplacement.");
+            // Fallback : un cube si le modèle ne charge pas
+            const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+            const material = new THREE.MeshNormalMaterial();
+            modelToPlace = new THREE.Mesh(geometry, material);
+            // On remonte le cube pour qu'il soit posé SUR le sol, pas à moitié enfoncé
+            modelToPlace.position.y = 0.1; 
         }
-    }, undefined, function (error) {
-        console.error("Erreur lors du chargement de model.glb. Création du fallback...", error);
-        createFallbackCylinder();
-    });
+    );
 
-    // 6. Reticle (Cercle de Hit Test)
-    const geometry = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    reticle = new THREE.Mesh(geometry, material);
+    // 7. Reticle (Le cercle vert pour viser le sol)
+    const ringGeo = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    reticle = new THREE.Mesh(ringGeo, ringMat);
     reticle.matrixAutoUpdate = false;
     reticle.visible = false;
     scene.add(reticle);
 
-    // 7. Interaction : Placer le modèle
+    // 8. Contrôleur (Clic sur l'écran pour placer)
     const controller = renderer.xr.getController(0);
     controller.addEventListener('select', onSelect);
     scene.add(controller);
 
-    setupUI();
     window.addEventListener('resize', onWindowResize);
 }
 
 function onSelect() {
-    if (reticle.visible && model && !modelPlaced) {
-        // Dans le cas du cylindre, on place le groupe principal
-        model.position.setFromMatrixPosition(reticle.matrix);
+    // Si le cercle est visible, que le modèle est chargé et qu'il n'est pas encore placé
+    if (reticle.visible && modelToPlace && !modelPlaced) {
         
-        // Orienter le modèle vers la caméra (axe Y)
-        const lookPos = new THREE.Vector3(camera.position.x, model.position.y, camera.position.z);
-        model.lookAt(lookPos);
+        // On clone le modèle pour ne pas altérer l'original (bonne pratique)
+        const newModel = modelToPlace.clone();
         
-        scene.add(model);
-        modelPlaced = true;
+        // On le place à la position du reticle
+        newModel.position.setFromMatrixPosition(reticle.matrix);
+        
+        // On l'oriente vers la caméra
+        const lookPos = new THREE.Vector3(camera.position.x, newModel.position.y, camera.position.z);
+        newModel.lookAt(lookPos);
+        
+        scene.add(newModel);
+        
+        // On cache le reticle et on empêche d'en placer d'autres
         reticle.visible = false;
-
-        document.getElementById('talk-btn').style.display = 'block';
+        modelPlaced = true; 
     }
-}
-
-function setupUI() {
-    const talkBtn = document.getElementById('talk-btn');
-    const widgetContainer = document.getElementById('eleven-widget-container');
-
-    talkBtn.addEventListener('click', () => {
-        widgetContainer.classList.toggle('hidden');
-        if(widgetContainer.classList.contains('hidden')) {
-            talkBtn.textContent = "Parler à Tintin";
-            talkBtn.style.backgroundColor = "#e74c3c";
-        } else {
-            talkBtn.textContent = "Fermer le chat";
-            talkBtn.style.backgroundColor = "#7f8c8d";
-        }
-    });
 }
 
 function onWindowResize() {
@@ -155,13 +105,12 @@ function animate() {
 }
 
 function render(timestamp, frame) {
-    const delta = clock.getDelta();
-    if (mixer) mixer.update(delta);
-
+    // Si on est en AR, qu'on a une frame, et que le modèle n'est pas encore placé
     if (frame && !modelPlaced) {
         const referenceSpace = renderer.xr.getReferenceSpace();
         const session = renderer.xr.getSession();
 
+        // Demande d'accès au Hit Test
         if (hitTestSourceRequested === false) {
             session.requestReferenceSpace('viewer').then(function (referenceSpace) {
                 session.requestHitTestSource({ space: referenceSpace }).then(function (source) {
@@ -171,10 +120,12 @@ function render(timestamp, frame) {
             session.addEventListener('end', function () {
                 hitTestSourceRequested = false;
                 hitTestSource = null;
+                modelPlaced = false; // Permet de replacer si on relance la session
             });
             hitTestSourceRequested = true;
         }
 
+        // Calcul de la position du Hit Test
         if (hitTestSource) {
             const hitTestResults = frame.getHitTestResults(hitTestSource);
 
