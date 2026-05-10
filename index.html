@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>WebXR AR - Hit Test</title>
+    <title>Tintin AR - Aventure</title>
     <link rel="stylesheet" href="style.css">
     
-    <!-- Import Map pour Three.js -->
     <script type="importmap">
         {
             "imports": {
@@ -17,6 +16,17 @@
     </script>
 </head>
 <body>
-    <script type="module" src="main.js=v4"></script>
+
+    <!-- L'écran d'accueil style Bande Dessinée -->
+    <div id="landing-page">
+        <div class="comic-panel">
+            <h1>Mille Sabords !</h1>
+            <p>Clique sur le bouton ci-dessous pour faire apparaître Tintin dans ton salon.</p>
+        </div>
+    </div>
+
+    <!-- Ton script (Pense à changer le numéro v=7 pour le cache) -->
+    <script type="module" src="main.js?v=7"></script>
+
 </body>
 </html>
