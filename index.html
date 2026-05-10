@@ -15,6 +15,9 @@
     }
   }
   </script>
+
+  <!-- ElevenLabs ConvAI Widget -->
+  <script src="https://elevenlabs.io/convai-widget/index.js" async></script>
 </head>
 <body>
 
@@ -27,49 +30,31 @@
     <!-- Header -->
     <div id="header">
       <span id="logo">◈ WebAR</span>
-      <span id="status-badge"><span id="status-dot"></span><span id="status-text">Prêt</span></span>
+      <span id="status-badge">
+        <span id="status-dot"></span>
+        <span id="status-text">Prêt</span>
+      </span>
     </div>
 
-    <!-- Bouton "Parler" haut gauche -->
-    <button id="btn-talk" class="hud-btn" title="Parler à l'assistant" disabled>
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-        <line x1="12" y1="19" x2="12" y2="23"/>
-        <line x1="8" y1="23" x2="16" y2="23"/>
-      </svg>
-      <span>Parler</span>
-    </button>
-
-    <!-- Zone de transcription -->
-    <div id="transcript-box" class="hidden">
-      <div id="transcript-user" class="transcript-line user-line"></div>
-      <div id="transcript-agent" class="transcript-line agent-line"></div>
-    </div>
-
-    <!-- Indicateur d'écoute -->
-    <div id="listening-indicator" class="hidden">
-      <div class="pulse-ring"></div>
-      <div class="pulse-ring delay-1"></div>
-      <div class="pulse-ring delay-2"></div>
-      <span>Écoute...</span>
-    </div>
-
-    <!-- Bouton Start AR (injecté par Three.js ARButton, stylisé via CSS) -->
+    <!-- Bouton Start AR -->
     <div id="ar-button-container"></div>
 
-    <!-- Instruction placement -->
+    <!-- Indication placement -->
     <div id="placement-hint" class="hidden">
       <span>↕ Déplacez l'appareil pour détecter une surface, puis appuyez pour placer</span>
     </div>
 
-    <!-- Footer info -->
+    <!-- Footer -->
     <div id="footer">
       <span>ElevenLabs ConvAI · WebXR AR · Three.js r160</span>
     </div>
 
   </div>
 
+  <!-- ElevenLabs Widget — remplacez VOTRE_AGENT_ID -->
+  <elevenlabs-convai agent-id="VOTRE_AGENT_ID"></elevenlabs-convai>
+
   <script type="module" src="main.js"></script>
 </body>
 </html>
+
