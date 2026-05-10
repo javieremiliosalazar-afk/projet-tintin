@@ -1,39 +1,75 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>WebAR + ElevenLabs</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>WebAR Assistant</title>
+  <link rel="stylesheet" href="style.css" />
 
-  <!-- A-Frame -->
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <!-- Three.js via Import Map -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
 </head>
-
 <body>
 
-  <!-- Bouton UI -->
-  <button id="voiceBtn">🎤 Parler</button>
+  <!-- Canvas WebXR -->
+  <canvas id="ar-canvas"></canvas>
 
-  <!-- Scène AR -->
-  <a-scene embedded>
-    
-    <!-- Assets -->
-    <a-assets>
-      <a-asset-item id="model" src="model.glb"></a-asset-item>
-    </a-assets>
+  <!-- Overlay UI -->
+  <div id="overlay">
 
-    <!-- Caméra -->
-    <a-camera position="0 1.6 3"></a-camera>
+    <!-- Header -->
+    <div id="header">
+      <span id="logo">◈ WebAR</span>
+      <span id="status-badge"><span id="status-dot"></span><span id="status-text">Prêt</span></span>
+    </div>
 
-    <!-- Personnage -->
-    <a-entity 
-      gltf-model="#model"
-      position="0 0 -3"
-      scale="1 1 1">
-    </a-entity>
+    <!-- Bouton "Parler" haut gauche -->
+    <button id="btn-talk" class="hud-btn" title="Parler à l'assistant" disabled>
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+      <span>Parler</span>
+    </button>
 
-  </a-scene>
+    <!-- Zone de transcription -->
+    <div id="transcript-box" class="hidden">
+      <div id="transcript-user" class="transcript-line user-line"></div>
+      <div id="transcript-agent" class="transcript-line agent-line"></div>
+    </div>
 
-  <script src="main.js"></script>
+    <!-- Indicateur d'écoute -->
+    <div id="listening-indicator" class="hidden">
+      <div class="pulse-ring"></div>
+      <div class="pulse-ring delay-1"></div>
+      <div class="pulse-ring delay-2"></div>
+      <span>Écoute...</span>
+    </div>
+
+    <!-- Bouton Start AR (injecté par Three.js ARButton, stylisé via CSS) -->
+    <div id="ar-button-container"></div>
+
+    <!-- Instruction placement -->
+    <div id="placement-hint" class="hidden">
+      <span>↕ Déplacez l'appareil pour détecter une surface, puis appuyez pour placer</span>
+    </div>
+
+    <!-- Footer info -->
+    <div id="footer">
+      <span>ElevenLabs ConvAI · WebXR AR · Three.js r160</span>
+    </div>
+
+  </div>
+
+  <script type="module" src="main.js"></script>
 </body>
 </html>
