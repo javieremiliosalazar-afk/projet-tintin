@@ -1,60 +1,105 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>WebAR Assistant</title>
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- Three.js via Import Map -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-    }
-  }
-  </script>
-
-  <!-- ElevenLabs ConvAI Widget -->
-  <script src="https://elevenlabs.io/convai-widget/index.js" async></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Tintin AR — Projet Numérique</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Canvas WebXR -->
-  <canvas id="ar-canvas"></canvas>
+  <div class="halftone-bg"></div>
 
-  <!-- Overlay UI -->
-  <div id="overlay">
+  <!-- ═══════ START SCREEN ═══════ -->
+  <div id="start-screen">
+    <div class="comic-card">
+      <div class="logo-strip">✦ Projet Numérique ✦</div>
 
-    <!-- Header -->
-    <div id="header">
-      <span id="logo">◈ WebAR</span>
-      <span id="status-badge">
-        <span id="status-dot"></span>
-        <span id="status-text">Prêt</span>
-      </span>
+      <h1 class="comic-title">TIN<span>TIN</span> AR</h1>
+
+      <!-- Tintin SVG -->
+      <svg class="tintin-avatar" viewBox="0 0 110 130" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="55" cy="125" rx="24" ry="5" fill="rgba(0,0,0,.12)"/>
+        <rect x="36" y="91" width="15" height="26" rx="5" fill="#1565C0" stroke="#1A1A2E" stroke-width="2.5"/>
+        <rect x="59" y="91" width="15" height="26" rx="5" fill="#1565C0" stroke="#1A1A2E" stroke-width="2.5"/>
+        <ellipse cx="43" cy="118" rx="10" ry="6" fill="#5D4037" stroke="#1A1A2E" stroke-width="2"/>
+        <ellipse cx="67" cy="118" rx="10" ry="6" fill="#5D4037" stroke="#1A1A2E" stroke-width="2"/>
+        <rect x="32" y="71" width="46" height="28" rx="6" fill="#1565C0" stroke="#1A1A2E" stroke-width="2.5"/>
+        <rect x="30" y="52" width="50" height="26" rx="6" fill="white" stroke="#1A1A2E" stroke-width="2.5"/>
+        <rect x="30" y="70" width="50" height="7" rx="2" fill="#F9A825" stroke="#1A1A2E" stroke-width="2"/>
+        <rect x="10" y="54" width="22" height="11" rx="5" fill="white" stroke="#1A1A2E" stroke-width="2.5"/>
+        <rect x="78" y="54" width="22" height="11" rx="5" fill="white" stroke="#1A1A2E" stroke-width="2.5"/>
+        <circle cx="15" cy="65" r="7" fill="#FFCC80" stroke="#1A1A2E" stroke-width="2"/>
+        <circle cx="95" cy="65" r="7" fill="#FFCC80" stroke="#1A1A2E" stroke-width="2"/>
+        <rect x="48" y="47" width="14" height="10" rx="3" fill="#FFCC80" stroke="#1A1A2E" stroke-width="2"/>
+        <ellipse cx="55" cy="32" rx="22" ry="22" fill="#FFCC80" stroke="#1A1A2E" stroke-width="2.5"/>
+        <path d="M46 16 Q55 4 62 14 Q58 10 55 14 Q52 10 46 16Z" fill="#FFCC80" stroke="#1A1A2E" stroke-width="2"/>
+        <ellipse cx="55" cy="14" rx="8" ry="5" fill="#FFCC80" stroke="#1A1A2E" stroke-width="2"/>
+        <circle cx="47" cy="32" r="3.5" fill="#1A1A2E"/>
+        <circle cx="63" cy="32" r="3.5" fill="#1A1A2E"/>
+        <circle cx="48" cy="31" r="1.2" fill="white"/>
+        <circle cx="64" cy="31" r="1.2" fill="white"/>
+        <path d="M49 40 Q55 46 61 40" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+
+      <div class="bubble">
+        Pointe ta caméra vers une surface plane et tape pour me placer dans ton monde !
+      </div>
+
+      <button class="btn btn-primary" id="btn-start">
+        🔭 Lancer l'AR
+      </button>
+      <p class="compat-note">Chrome sur Android requis · WebXR</p>
     </div>
-
-    <!-- Bouton Start AR -->
-    <div id="ar-button-container"></div>
-
-    <!-- Indication placement -->
-    <div id="placement-hint" class="hidden">
-      <span>↕ Déplacez l'appareil pour détecter une surface, puis appuyez pour placer</span>
-    </div>
-
-    <!-- Footer -->
-    <div id="footer">
-      <span>ElevenLabs ConvAI · WebXR AR · Three.js r160</span>
-    </div>
-
   </div>
 
-  <!-- ElevenLabs Widget — remplacez VOTRE_AGENT_ID -->
-  <elevenlabs-convai agent-id="agent_6201kncf8mfdey5s99wfnbgp952a"></elevenlabs-convai>
+  <!-- ═══════ AR CANVAS ═══════ -->
+  <canvas id="ar-canvas"></canvas>
 
-  <script type="module" src="main.js"></script>
+  <!-- ═══════ AR OVERLAY ═══════ -->
+  <div id="ar-ui">
+    <button class="btn btn-blue" id="btn-parler">
+      💬 Parler
+    </button>
+    <div class="ar-hint" id="ar-hint">👇 Tape sur une surface pour placer Tintin</div>
+    <div class="placed-tag" id="placed-tag">✓ Tintin placé !</div>
+  </div>
+
+  <!-- ═══════ CONVERSATION PANEL ═══════ -->
+  <div id="conv-panel">
+    <div class="drag-bar"></div>
+    <div class="panel-header">
+      <span class="panel-title">💬 Conversation</span>
+      <button class="btn btn-close" id="btn-close-conv">✕ Fermer</button>
+    </div>
+    <elevenlabs-convai agent-id="agent_6201kncf8mfdey5s99wfnbgp952a"></elevenlabs-convai>
+  </div>
+
+  <!-- Flash -->
+  <div id="flash"></div>
+
+  <!-- No-AR fallback -->
+  <div id="no-ar">
+    <div class="comic-card" style="text-align:center;">
+      <p style="font-size:2.5rem;margin-bottom:12px">😕</p>
+      <h2 class="comic-title" style="color:var(--red);margin-bottom:12px">AR Non Supportée</h2>
+      <p style="font-weight:700;font-size:.9rem;line-height:1.6;">
+        Ton appareil ou navigateur ne prend pas en charge WebXR AR.<br><br>
+        Essaie <strong>Chrome sur Android</strong> ou Safari 16+ sur iOS.
+      </p>
+      <button class="btn btn-primary" id="btn-back" style="margin-top:20px">← Retour</button>
+    </div>
+  </div>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- ElevenLabs Widget -->
+  <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+  <!-- App -->
+  <script src="main.js"></script>
+
 </body>
 </html>
+
 
