@@ -1,226 +1,181 @@
-/**
- * main.js — WebAR
- * ─────────────────────────────────────────────────
- * La conversation ElevenLabs est gérée par le widget
- * intégré dans index.html. Ce fichier gère uniquement
- * la scène Three.js et la session WebXR.
- *
- * CONFIGURATION :
- *   MODEL_URL    → chemin vers votre modèle GLB
- *   MODEL_SCALE  → taille du personnage
- */
-
 import * as THREE from 'three';
+import { ARButton } from 'three/addons/webxr/ARButton.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { ARButton }   from 'three/addons/webxr/ARButton.js';
 
-/* ══════════════════════════════════════════════
-   ▌ CONFIGURATION — À MODIFIER
-   ══════════════════════════════════════════════ */
-
-const CONFIG = {
-  MODEL_URL:   './model.glb', // ← Chemin vers votre fichier GLB
-  MODEL_SCALE: 1.0,                  // ← Taille du personnage
-};
-
-/* ══════════════════════════════════════════════
-   ▌ UI ELEMENTS
-   ══════════════════════════════════════════════ */
-
-const ui = {
-  canvas:            document.getElementById('ar-canvas'),
-  statusDot:         document.getElementById('status-dot'),
-  statusText:        document.getElementById('status-text'),
-  arButtonContainer: document.getElementById('ar-button-container'),
-  placementHint:     document.getElementById('placement-hint'),
-};
-
-function setStatus(text, state = 'idle') {
-  ui.statusText.textContent = text;
-  ui.statusDot.className = '';
-  if (state !== 'idle') ui.statusDot.classList.add(state);
-}
-
-/* ══════════════════════════════════════════════
-   ▌ THREE.JS — SCENE
-   ══════════════════════════════════════════════ */
-
-const renderer = new THREE.WebGLRenderer({ canvas: ui.canvas, antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.xr.enabled = true;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.2;
-
-const scene  = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-
-// Lumières
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambientLight);
-
-const dirLight = new THREE.DirectionalLight(0x00f5ff, 1.2);
-dirLight.position.set(1, 3, 2);
-scene.add(dirLight);
-
-const fillLight = new THREE.DirectionalLight(0xb07dff, 0.4);
-fillLight.position.set(-2, 1, -1);
-scene.add(fillLight);
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-/* ══════════════════════════════════════════════
-   ▌ GLTF MODEL
-   ══════════════════════════════════════════════ */
-
-let characterModel = null;
-let mixer = null;
-const clock = new THREE.Clock();
-const loader = new GLTFLoader();
-
-function loadModel() {
-  setStatus('Chargement modèle...', 'active');
-
-  loader.load(
-    CONFIG.MODEL_URL,
-    (gltf) => {
-      characterModel = gltf.scene;
-      characterModel.scale.setScalar(CONFIG.MODEL_SCALE);
-      characterModel.visible = false;
-
-      characterModel.traverse((node) => {
-        if (node.isMesh) {
-          node.castShadow = true;
-          node.receiveShadow = true;
-        }
-      });
-
-      if (gltf.animations.length > 0) {
-        mixer = new THREE.AnimationMixer(characterModel);
-        const idleClip = gltf.animations.find(a => /idle/i.test(a.name)) || gltf.animations[0];
-        mixer.clipAction(idleClip).play();
-      }
-
-      scene.add(characterModel);
-      setStatus('Modèle prêt', 'active');
-      console.log('✅ Modèle chargé :', gltf);
-    },
-    (progress) => {
-      const pct = Math.round((progress.loaded / progress.total) * 100);
-      setStatus(`Chargement ${pct}%`, 'active');
-    },
-    (error) => {
-      console.error('❌ Erreur chargement modèle :', error);
-      setStatus('Erreur modèle — fallback', 'error');
-      const geo = new THREE.CapsuleGeometry(0.15, 0.5, 8, 16);
-      const mat = new THREE.MeshStandardMaterial({ color: 0x00f5ff, emissive: 0x001a1f });
-      characterModel = new THREE.Mesh(geo, mat);
-      characterModel.visible = false;
-      scene.add(characterModel);
-    }
-  );
-}
-
-/* ══════════════════════════════════════════════
-   ▌ WEBXR — AR SESSION + HIT TEST
-   ══════════════════════════════════════════════ */
-
+let camera, scene, renderer;
+let reticle, model, mixer;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
 let modelPlaced = false;
 
-// Réticule de placement
-const reticleGeometry = new THREE.RingGeometry(0.06, 0.08, 32).rotateX(-Math.PI / 2);
-const reticleMaterial = new THREE.MeshBasicMaterial({ color: 0x00f5ff, opacity: 0.8, transparent: true });
-const reticle = new THREE.Mesh(reticleGeometry, reticleMaterial);
-reticle.matrixAutoUpdate = false;
-reticle.visible = false;
-scene.add(reticle);
+const clock = new THREE.Clock();
 
-// Bouton AR
-const arButton = ARButton.createButton(renderer, {
-  requiredFeatures: ['hit-test'],
-  optionalFeatures: ['dom-overlay'],
-  domOverlay: { root: document.getElementById('overlay') },
-});
-arButton.id = 'ARButton';
-ui.arButtonContainer.appendChild(arButton);
+init();
+animate();
 
-// Événements session XR
-renderer.xr.addEventListener('sessionstart', () => {
-  setStatus('AR actif', 'active');
-  if (!modelPlaced) ui.placementHint.classList.remove('hidden');
-});
+function init() {
+    // 1. Setup de la scène et de la caméra
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-renderer.xr.addEventListener('sessionend', () => {
-  setStatus('Prêt');
-  hitTestSource = null;
-  hitTestSourceRequested = false;
-  ui.placementHint.classList.add('hidden');
-  if (characterModel) characterModel.visible = false;
-  modelPlaced = false;
-});
+    // 2. Lumières
+    const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+    light.position.set(0.5, 1, 0.25);
+    scene.add(light);
 
-// Touch → placement
-const controller = renderer.xr.getController(0);
-controller.addEventListener('select', onSelect);
-scene.add(controller);
+    // 3. Setup du Renderer avec WebXR
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true;
+    document.body.appendChild(renderer.domElement);
 
-function onSelect() {
-  if (reticle.visible && characterModel) {
-    characterModel.position.setFromMatrixPosition(reticle.matrix);
-    characterModel.visible = true;
+    // 4. Bouton AR avec DOM Overlay
+    const arOverlay = document.getElementById('ar-overlay');
+    const arButtonContainer = document.getElementById('ar-button-container');
+    
+    const arButton = ARButton.createButton(renderer, {
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['dom-overlay'],
+        domOverlay: { root: arOverlay }
+    });
+    // On personnalise le texte du bouton généré par Three.js
+    arButton.textContent = "Start AR";
+    arButtonContainer.appendChild(arButton);
+
+    // Gestion de l'affichage de la landing page vs AR
+    renderer.xr.addEventListener('sessionstart', () => {
+        document.getElementById('landing-page').style.display = 'none';
+        arOverlay.style.display = 'block';
+    });
+    renderer.xr.addEventListener('sessionend', () => {
+        document.getElementById('landing-page').style.display = 'flex';
+        arOverlay.style.display = 'none';
+        modelPlaced = false;
+        if (model) scene.remove(model);
+        document.getElementById('talk-btn').style.display = 'none';
+        document.getElementById('eleven-widget-container').classList.add('hidden');
+    });
+
+    // 5. Chargement du Modèle 3D (Tintin)
+    const loader = new GLTFLoader();
+    // REMPLACE PAR LE CHEMIN DE TON MODÈLE GLB
+    loader.load('./model.glb', function (gltf) {
+        model = gltf.scene;
+        // Ajuste la taille du modèle selon tes besoins
+        model.scale.set(0.5, 0.5, 0.5); 
+        
+        // Setup de l'animation idle
+        if (gltf.animations && gltf.animations.length > 0) {
+            mixer = new THREE.AnimationMixer(model);
+            const idleAction = mixer.clipAction(gltf.animations[0]);
+            idleAction.play();
+        }
+    }, undefined, function (error) {
+        console.error("Erreur lors du chargement du modèle :", error);
+    });
+
+    // 6. Reticle (Cercle de Hit Test)
+    const geometry = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    reticle = new THREE.Mesh(geometry, material);
+    reticle.matrixAutoUpdate = false;
     reticle.visible = false;
-    modelPlaced = true;
-    ui.placementHint.classList.add('hidden');
-    setStatus('Personnage placé', 'active');
-  }
+    scene.add(reticle);
+
+    // 7. Interaction : Placer le modèle
+    const controller = renderer.xr.getController(0);
+    controller.addEventListener('select', onSelect);
+    scene.add(controller);
+
+    // 8. Logique des boutons UI
+    setupUI();
+
+    window.addEventListener('resize', onWindowResize);
 }
 
-/* ══════════════════════════════════════════════
-   ▌ BOUCLE DE RENDU
-   ══════════════════════════════════════════════ */
-
-renderer.setAnimationLoop((timestamp, frame) => {
-  const delta = clock.getDelta();
-  if (mixer) mixer.update(delta);
-
-  if (frame) {
-    const referenceSpace = renderer.xr.getReferenceSpace();
-    const session = renderer.xr.getSession();
-
-    if (!hitTestSourceRequested) {
-      session.requestReferenceSpace('viewer').then((viewerSpace) => {
-        session.requestHitTestSource({ space: viewerSpace }).then((source) => {
-          hitTestSource = source;
-        });
-      });
-      hitTestSourceRequested = true;
-    }
-
-    if (hitTestSource && !modelPlaced) {
-      const hitTestResults = frame.getHitTestResults(hitTestSource);
-      if (hitTestResults.length > 0) {
-        const hit = hitTestResults[0];
-        reticle.visible = true;
-        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-      } else {
+function onSelect() {
+    if (reticle.visible && model && !modelPlaced) {
+        // Positionner le modèle à l'endroit du reticle
+        model.position.setFromMatrixPosition(reticle.matrix);
+        // Orienter le modèle vers la caméra (uniquement sur l'axe Y)
+        const lookPos = new THREE.Vector3(camera.position.x, model.position.y, camera.position.z);
+        model.lookAt(lookPos);
+        
+        scene.add(model);
+        modelPlaced = true;
         reticle.visible = false;
-      }
+
+        // Afficher le bouton "Parler" une fois le modèle placé
+        document.getElementById('talk-btn').style.display = 'block';
     }
-  }
+}
 
-  renderer.render(scene, camera);
-});
+function setupUI() {
+    const talkBtn = document.getElementById('talk-btn');
+    const widgetContainer = document.getElementById('eleven-widget-container');
 
-/* ══════════════════════════════════════════════
-   ▌ INIT
-   ══════════════════════════════════════════════ */
+    talkBtn.addEventListener('click', () => {
+        // Alterne l'affichage du widget
+        widgetContainer.classList.toggle('hidden');
+        if(widgetContainer.classList.contains('hidden')) {
+            talkBtn.textContent = "Parler à Tintin";
+            talkBtn.style.backgroundColor = "#e74c3c";
+        } else {
+            talkBtn.textContent = "Fermer le chat";
+            talkBtn.style.backgroundColor = "#7f8c8d";
+        }
+    });
+}
 
-loadModel();
-setStatus('Prêt', 'idle');
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function animate() {
+    renderer.setAnimationLoop(render);
+}
+
+function render(timestamp, frame) {
+    const delta = clock.getDelta();
+    
+    // Mettre à jour l'animation du modèle
+    if (mixer) mixer.update(delta);
+
+    // Gestion du Hit Test
+    if (frame && !modelPlaced) {
+        const referenceSpace = renderer.xr.getReferenceSpace();
+        const session = renderer.xr.getSession();
+
+        if (hitTestSourceRequested === false) {
+            session.requestReferenceSpace('viewer').then(function (referenceSpace) {
+                session.requestHitTestSource({ space: referenceSpace }).then(function (source) {
+                    hitTestSource = source;
+                });
+            });
+            session.addEventListener('end', function () {
+                hitTestSourceRequested = false;
+                hitTestSource = null;
+            });
+            hitTestSourceRequested = true;
+        }
+
+        if (hitTestSource) {
+            const hitTestResults = frame.getHitTestResults(hitTestSource);
+
+            if (hitTestResults.length > 0) {
+                const hit = hitTestResults[0];
+                const pose = hit.getPose(referenceSpace);
+
+                reticle.visible = true;
+                reticle.matrix.fromArray(pose.transform.matrix);
+            } else {
+                reticle.visible = false;
+            }
+        }
+    }
+
+    renderer.render(scene, camera);
+}
