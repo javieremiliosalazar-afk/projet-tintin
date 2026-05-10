@@ -1,222 +1,359 @@
-/* ═══════════════════════════════════════════════
-   WEBAR — style.css
-   Aesthetic: Sci-Fi HUD / Holographic Interface
-   ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   TINTIN AR — style.css
+   Comics-oriented UI
+═══════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=Share+Tech+Mono&display=swap');
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-/* ── Variables ────────────────────────────────── */
 :root {
-  --cyan:      #00f5ff;
-  --cyan-dim:  #00c8d4;
-  --cyan-glow: rgba(0, 245, 255, 0.25);
-  --bg-dark:   #030d12;
-  --bg-panel:  rgba(0, 18, 26, 0.82);
-  --border:    rgba(0, 245, 255, 0.3);
-  --text:      #c8f4ff;
-  --text-dim:  rgba(200, 244, 255, 0.55);
-  --danger:    #ff4060;
-  --font-hud:  'Orbitron', monospace;
-  --font-mono: 'Share Tech Mono', monospace;
-  --radius:    6px;
-  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --ink:   #1A1A2E;
+  --cream: #FFF8E7;
+  --red:   #D32F2F;
+  --blue:  #1565C0;
+  --gold:  #F9A825;
+  --skin:  #FFCC80;
 }
 
-/* ── Reset ────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html, body {
-  width: 100%; height: 100%;
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--cream);
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
-  background: var(--bg-dark);
-  font-family: var(--font-mono);
-  color: var(--text);
-  -webkit-tap-highlight-color: transparent;
+  position: fixed;
 }
 
-/* ── Canvas ───────────────────────────────────── */
+/* ── Halftone background ── */
+.halftone-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle, rgba(249,168,37,.35) 1.2px, transparent 1.2px),
+    radial-gradient(circle, rgba(249,168,37,.18) 1px,   transparent 1px);
+  background-size: 22px 22px, 11px 11px;
+  background-position: 0 0, 5.5px 5.5px;
+}
+
+/* ════════════════════════
+   START SCREEN
+════════════════════════ */
+#start-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  padding: 24px;
+}
+
+.comic-card {
+  background: white;
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  padding: 32px 28px 28px;
+  max-width: 340px;
+  width: 100%;
+  box-shadow: 8px 8px 0 var(--ink);
+  text-align: center;
+}
+
+.logo-strip {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 12px;
+  background: var(--gold);
+  border: 3px solid var(--ink);
+  border-radius: 6px;
+  padding: 2px 14px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink);
+  transform: rotate(-1.5deg);
+}
+
+.comic-title {
+  font-family: 'Bangers', cursive;
+  font-size: 4rem;
+  color: var(--ink);
+  line-height: 1;
+  letter-spacing: 3px;
+  margin-bottom: 4px;
+}
+
+.comic-title span {
+  color: var(--red);
+  -webkit-text-stroke: 2px var(--ink);
+}
+
+/* Tintin SVG */
+.tintin-avatar {
+  width: 110px;
+  height: 110px;
+  margin: 16px auto;
+  display: block;
+}
+
+/* Speech bubble */
+.bubble {
+  position: relative;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  padding: 14px 18px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0 0 24px;
+}
+
+.bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -14px;
+  left: 44px;
+  border: 7px solid transparent;
+  border-top-color: var(--ink);
+}
+
+.bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 45px;
+  border: 6px solid transparent;
+  border-top-color: var(--cream);
+  z-index: 1;
+}
+
+.compat-note {
+  margin-top: 12px;
+  font-size: 0.72rem;
+  color: #999;
+  font-weight: 700;
+}
+
+/* ════════════════════════
+   BUTTONS
+════════════════════════ */
+.btn {
+  font-family: 'Bangers', cursive;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border: 3.5px solid var(--ink);
+  border-radius: 12px;
+  transition: transform .08s, box-shadow .08s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-transform: uppercase;
+}
+
+.btn:active {
+  transform: translate(4px, 4px) !important;
+  box-shadow: 2px 2px 0 var(--ink) !important;
+}
+
+.btn-primary {
+  background: var(--red);
+  color: white;
+  font-size: 1.6rem;
+  padding: 12px 32px;
+  box-shadow: 6px 6px 0 var(--ink);
+  width: 100%;
+}
+
+.btn-primary:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 var(--ink);
+}
+
+.btn-blue {
+  background: var(--blue);
+  color: white;
+  font-size: 1.2rem;
+  padding: 10px 22px;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+.btn-blue:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--ink);
+}
+
+.btn-close {
+  background: var(--ink);
+  color: white;
+  font-size: 1rem;
+  padding: 7px 16px;
+  box-shadow: 3px 3px 0 #555;
+}
+
+.btn-close:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #555;
+}
+
+/* ════════════════════════
+   AR CANVAS
+════════════════════════ */
 #ar-canvas {
   position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
-  display: block;
-  z-index: 0;
+  z-index: 1;
 }
 
-/* ── Overlay ──────────────────────────────────── */
-#overlay {
+/* ════════════════════════
+   AR OVERLAY
+════════════════════════ */
+#ar-ui {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: 25;
   pointer-events: none;
+  display: none;
 }
 
-#overlay button,
-#overlay #ar-button-container {
-  pointer-events: auto;
-}
-
-/* ── Header ───────────────────────────────────── */
-#header {
+#btn-parler {
   position: absolute;
-  top: 18px; left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 40px;
-  padding: 8px 20px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 0 24px var(--cyan-glow);
+  top: 20px;
+  left: 20px;
+  pointer-events: all;
+  display: none;
 }
 
-#logo {
-  font-family: var(--font-hud);
+.ar-hint {
+  position: absolute;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 3px solid var(--ink);
+  border-radius: 30px;
+  padding: 10px 22px;
+  font-family: 'Nunito', sans-serif;
   font-weight: 900;
   font-size: 0.85rem;
-  letter-spacing: 0.18em;
-  color: var(--cyan);
-  text-shadow: 0 0 12px var(--cyan);
-}
-
-#status-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  color: var(--text-dim);
-}
-
-#status-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--text-dim);
-  transition: background var(--transition), box-shadow var(--transition);
-}
-
-#status-dot.active {
-  background: var(--cyan);
-  box-shadow: 0 0 8px var(--cyan);
-  animation: pulse-dot 1.4s ease-in-out infinite;
-}
-
-#status-dot.error {
-  background: var(--danger);
-  box-shadow: 0 0 8px var(--danger);
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
-}
-
-/* ── AR Button Container ──────────────────────── */
-#ar-button-container {
-  position: absolute;
-  bottom: 48px; left: 50%;
-  transform: translateX(-50%);
-}
-
-/* Override Three.js ARButton style */
-#ar-button-container > button,
-#ARButton {
-  background: var(--bg-panel) !important;
-  border: 1px solid var(--cyan) !important;
-  border-radius: var(--radius) !important;
-  color: var(--cyan) !important;
-  font-family: var(--font-hud) !important;
-  font-size: 0.75rem !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.15em !important;
-  padding: 14px 36px !important;
-  text-transform: uppercase !important;
-  cursor: pointer !important;
-  backdrop-filter: blur(12px) !important;
-  box-shadow: 0 0 24px var(--cyan-glow) !important;
-  transition: all 0.25s ease !important;
-  white-space: nowrap !important;
-}
-
-#ar-button-container > button:hover {
-  background: rgba(0,245,255,0.12) !important;
-  box-shadow: 0 0 40px var(--cyan-glow) !important;
-}
-
-/* ── Placement Hint ───────────────────────────── */
-#placement-hint {
-  position: absolute;
-  bottom: 110px; left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 40px;
-  padding: 8px 18px;
-  font-size: 0.68rem;
-  color: var(--text-dim);
-  text-align: center;
-  backdrop-filter: blur(10px);
   white-space: nowrap;
-  animation: hint-pulse 2s ease-in-out infinite;
+  box-shadow: 4px 4px 0 var(--ink);
+  color: var(--ink);
+  animation: float 2s ease-in-out infinite;
 }
 
-@keyframes hint-pulse {
-  0%, 100% { opacity: 0.7; }
-  50%       { opacity: 1; }
+@keyframes float {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%       { transform: translateX(-50%) translateY(-5px); }
 }
 
-/* ── Footer ───────────────────────────────────── */
-#footer {
+.placed-tag {
   position: absolute;
-  bottom: 14px; left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.58rem;
-  letter-spacing: 0.1em;
-  color: var(--text-dim);
-  text-align: center;
-  white-space: nowrap;
+  top: 20px;
+  right: 20px;
+  background: var(--gold);
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  padding: 5px 14px;
+  font-family: 'Bangers', cursive;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  display: none;
 }
 
-/* ── ElevenLabs Widget ────────────────────────── */
-elevenlabs-convai {
+/* ════════════════════════
+   CONVERSATION PANEL
+════════════════════════ */
+#conv-panel {
   position: fixed;
-  bottom: 24px;
-  left: 20px;
-  z-index: 100;
+  bottom: -100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: white;
+  border-top: 4px solid var(--ink);
+  border-radius: 20px 20px 0 0;
+  padding: 16px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: bottom .35s cubic-bezier(.34, 1.56, .64, 1);
 }
 
-/* ── Utility ──────────────────────────────────── */
-.hidden { display: none !important; }
+#conv-panel.open {
+  bottom: 0;
+}
 
-/* ── Scanline FX ──────────────────────────────── */
-body::after {
-  content: '';
+.drag-bar {
+  width: 40px;
+  height: 5px;
+  background: #ddd;
+  border-radius: 3px;
+  margin: 0 auto 12px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.panel-title {
+  font-family: 'Bangers', cursive;
+  font-size: 1.7rem;
+  letter-spacing: 2px;
+  color: var(--ink);
+}
+
+elevenlabs-convai {
+  width: 100%;
+  max-width: 460px;
+}
+
+/* ════════════════════════
+   FLASH EFFECT
+════════════════════════ */
+#flash {
   position: fixed;
   inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 245, 255, 0.012) 2px,
-    rgba(0, 245, 255, 0.012) 4px
-  );
+  background: white;
+  z-index: 200;
   pointer-events: none;
-  z-index: 999;
+  opacity: 0;
 }
 
-/* ── Corner decoration ────────────────────────── */
-body::before {
-  content: '';
+@keyframes flash {
+  0%   { opacity: .9; }
+  100% { opacity: 0; }
+}
+
+/* ════════════════════════
+   NO-AR FALLBACK
+════════════════════════ */
+#no-ar {
   position: fixed;
-  top: 0; left: 0;
-  width: 80px; height: 80px;
-  border-top: 2px solid var(--cyan);
-  border-left: 2px solid var(--cyan);
-  opacity: 0.3;
-  pointer-events: none;
-  z-index: 999;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  background: var(--cream);
+  padding: 24px;
 }
 
