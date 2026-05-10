@@ -16,6 +16,10 @@ animate();
 function init() {
     // 1. Setup de la scène et de la caméra
     scene = new THREE.Scene();
+    // CRUCIAL : Ne PAS définir de couleur de fond pour la scène, 
+    // sinon ça masque le flux de la caméra en AR.
+    // scene.background = new THREE.Color(0x000000); // <- Ne pas faire ça !
+
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
     // 2. Lumières
@@ -24,10 +28,14 @@ function init() {
     scene.add(light);
 
     // 3. Setup du Renderer avec WebXR
+    // CRUCIAL : alpha: true est indispensable pour voir le flux vidéo derrière le canvas WebGL
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
+    
+    // S'assurer que le clear color est transparent
+    renderer.setClearColor(0x000000, 0); 
     document.body.appendChild(renderer.domElement);
 
     // 4. Bouton AR avec DOM Overlay
@@ -39,11 +47,9 @@ function init() {
         optionalFeatures: ['dom-overlay'],
         domOverlay: { root: arOverlay }
     });
-    // On personnalise le texte du bouton généré par Three.js
     arButton.textContent = "Start AR";
     arButtonContainer.appendChild(arButton);
 
-    // Gestion de l'affichage de la landing page vs AR
     renderer.xr.addEventListener('sessionstart', () => {
         document.getElementById('landing-page').style.display = 'none';
         arOverlay.style.display = 'block';
@@ -57,23 +63,35 @@ function init() {
         document.getElementById('eleven-widget-container').classList.add('hidden');
     });
 
-// 5. Chargement du Modèle 3D (Tintin)
+    // 5. Chargement du Modèle 3D avec Fallback
     const loader = new GLTFLoader();
     
-    // Remplace 'tintin_idle.glb' par 'model.glb'
+    // Fonction pour créer un cylindre rouge de secours
+    function createFallbackCylinder() {
+        console.warn("Utilisation du cylindre de secours.");
+        const geometry = new THREE.CylinderGeometry(0.2, 0.2, 1, 32);
+        const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const cylinder = new THREE.Mesh(geometry, material);
+        // Ajuster la position pour que la base soit sur le sol (hit test)
+        cylinder.position.y = 0.5; 
+        
+        // Créer un groupe pour l'utiliser comme "modèle" principal
+        model = new THREE.Group();
+        model.add(cylinder);
+    }
+
     loader.load('model.glb', function (gltf) {
         model = gltf.scene;
-        // Ajuste la taille du modèle selon tes besoins
         model.scale.set(0.5, 0.5, 0.5); 
         
-        // Setup de l'animation idle
         if (gltf.animations && gltf.animations.length > 0) {
             mixer = new THREE.AnimationMixer(model);
             const idleAction = mixer.clipAction(gltf.animations[0]);
             idleAction.play();
         }
     }, undefined, function (error) {
-        console.error("Erreur lors du chargement du modèle :", error);
+        console.error("Erreur lors du chargement de model.glb. Création du fallback...", error);
+        createFallbackCylinder();
     });
 
     // 6. Reticle (Cercle de Hit Test)
@@ -89,17 +107,16 @@ function init() {
     controller.addEventListener('select', onSelect);
     scene.add(controller);
 
-    // 8. Logique des boutons UI
     setupUI();
-
     window.addEventListener('resize', onWindowResize);
 }
 
 function onSelect() {
     if (reticle.visible && model && !modelPlaced) {
-        // Positionner le modèle à l'endroit du reticle
+        // Dans le cas du cylindre, on place le groupe principal
         model.position.setFromMatrixPosition(reticle.matrix);
-        // Orienter le modèle vers la caméra (uniquement sur l'axe Y)
+        
+        // Orienter le modèle vers la caméra (axe Y)
         const lookPos = new THREE.Vector3(camera.position.x, model.position.y, camera.position.z);
         model.lookAt(lookPos);
         
@@ -107,7 +124,6 @@ function onSelect() {
         modelPlaced = true;
         reticle.visible = false;
 
-        // Afficher le bouton "Parler" une fois le modèle placé
         document.getElementById('talk-btn').style.display = 'block';
     }
 }
@@ -117,7 +133,6 @@ function setupUI() {
     const widgetContainer = document.getElementById('eleven-widget-container');
 
     talkBtn.addEventListener('click', () => {
-        // Alterne l'affichage du widget
         widgetContainer.classList.toggle('hidden');
         if(widgetContainer.classList.contains('hidden')) {
             talkBtn.textContent = "Parler à Tintin";
@@ -141,11 +156,8 @@ function animate() {
 
 function render(timestamp, frame) {
     const delta = clock.getDelta();
-    
-    // Mettre à jour l'animation du modèle
     if (mixer) mixer.update(delta);
 
-    // Gestion du Hit Test
     if (frame && !modelPlaced) {
         const referenceSpace = renderer.xr.getReferenceSpace();
         const session = renderer.xr.getSession();
