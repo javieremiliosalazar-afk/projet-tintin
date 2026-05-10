@@ -1,60 +1,49 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>WebAR Assistant</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Tintin WebXR - Agent Conversationnel</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Script ElevenLabs ConvAI -->
+    <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
 
-  <!-- Three.js via Import Map -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-    }
-  }
-  </script>
-
-  <!-- ElevenLabs ConvAI Widget -->
-  <script src="https://elevenlabs.io/convai-widget/index.js" async></script>
+    <!-- Import Map pour Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 </head>
 <body>
 
-  <!-- Canvas WebXR -->
-  <canvas id="ar-canvas"></canvas>
-
-  <!-- Overlay UI -->
-  <div id="overlay">
-
-    <!-- Header -->
-    <div id="header">
-      <span id="logo">◈ WebAR</span>
-      <span id="status-badge">
-        <span id="status-dot"></span>
-        <span id="status-text">Prêt</span>
-      </span>
+    <!-- Landing Page -->
+    <div id="landing-page">
+        <div class="landing-content">
+            <h1>Expérience Tintin IA</h1>
+            <p>Placez Tintin dans votre environnement et discutez avec lui.</p>
+            <!-- Le bouton AR généré par Three.js viendra s'insérer ici -->
+            <div id="ar-button-container"></div>
+        </div>
     </div>
 
-    <!-- Bouton Start AR -->
-    <div id="ar-button-container"></div>
+    <!-- Interface utilisateur superposée en AR (DOM Overlay) -->
+    <div id="ar-overlay">
+        <!-- Bouton Parler -->
+        <button id="talk-btn" style="display: none;">Parler à Tintin</button>
 
-    <!-- Indication placement -->
-    <div id="placement-hint" class="hidden">
-      <span>↕ Déplacez l'appareil pour détecter une surface, puis appuyez pour placer</span>
+        <!-- Widget ElevenLabs (caché par défaut) -->
+        <div id="eleven-widget-container" class="hidden">
+            <!-- REMPLACE PAR TON AGENT ID -->
+            <elevenlabs-convai agent-id="TON_AGENT_ID_ELEVEN_LABS"></elevenlabs-convai>
+        </div>
     </div>
 
-    <!-- Footer -->
-    <div id="footer">
-      <span>ElevenLabs ConvAI · WebXR AR · Three.js r160</span>
-    </div>
-
-  </div>
-
-  <!-- ElevenLabs Widget — remplacez VOTRE_AGENT_ID -->
-  <elevenlabs-convai agent-id="VOTRE_AGENT_ID"></elevenlabs-convai>
-
-  <script type="module" src="main.js"></script>
+    <!-- Script principal -->
+    <script type="module" src="main.js"></script>
 </body>
 </html>
-
