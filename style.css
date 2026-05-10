@@ -49,12 +49,10 @@ html, body {
   position: fixed;
   inset: 0;
   z-index: 10;
-  pointer-events: none;            /* let touches pass through to XR canvas */
+  pointer-events: none;
 }
 
-/* Tout élément interactif réactive les events */
 #overlay button,
-#overlay #transcript-box,
 #overlay #ar-button-container {
   pointer-events: auto;
 }
@@ -106,12 +104,6 @@ html, body {
   animation: pulse-dot 1.4s ease-in-out infinite;
 }
 
-#status-dot.listening {
-  background: #44ff88;
-  box-shadow: 0 0 8px #44ff88;
-  animation: pulse-dot 0.8s ease-in-out infinite;
-}
-
 #status-dot.error {
   background: var(--danger);
   box-shadow: 0 0 8px var(--danger);
@@ -120,134 +112,6 @@ html, body {
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.4; }
-}
-
-/* ── HUD Button ───────────────────────────────── */
-.hud-btn {
-  position: absolute;
-  top: 80px; left: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 20px;
-  color: var(--cyan);
-  font-family: var(--font-hud);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  cursor: pointer;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 0 16px rgba(0,245,255,0.1), inset 0 0 16px rgba(0,245,255,0.04);
-  transition: all var(--transition);
-  text-transform: uppercase;
-  outline: none;
-  -webkit-appearance: none;
-}
-
-.hud-btn:not(:disabled):hover {
-  background: rgba(0, 245, 255, 0.12);
-  border-color: var(--cyan);
-  box-shadow: 0 0 28px var(--cyan-glow), inset 0 0 20px rgba(0,245,255,0.08);
-  transform: translateY(-1px);
-}
-
-.hud-btn:not(:disabled):active {
-  transform: scale(0.97);
-}
-
-.hud-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.hud-btn.listening {
-  border-color: #44ff88;
-  color: #44ff88;
-  box-shadow: 0 0 28px rgba(68,255,136,0.3), inset 0 0 20px rgba(68,255,136,0.06);
-}
-
-.hud-btn.listening svg {
-  animation: mic-scale 0.8s ease-in-out infinite alternate;
-}
-
-@keyframes mic-scale {
-  from { transform: scale(1); }
-  to   { transform: scale(1.25); }
-}
-
-/* ── Listening Indicator ──────────────────────── */
-#listening-indicator {
-  position: absolute;
-  bottom: 100px; left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
-  color: #44ff88;
-}
-
-.pulse-ring {
-  position: absolute;
-  left: -6px;
-  width: 40px; height: 40px;
-  border-radius: 50%;
-  border: 2px solid #44ff88;
-  animation: ring-pulse 1.4s ease-out infinite;
-  opacity: 0;
-}
-
-.pulse-ring.delay-1 { animation-delay: 0.4s; }
-.pulse-ring.delay-2 { animation-delay: 0.8s; }
-
-@keyframes ring-pulse {
-  0%   { transform: scale(0.5); opacity: 0.8; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-
-/* ── Transcript Box ───────────────────────────── */
-#transcript-box {
-  position: absolute;
-  bottom: 150px; left: 16px; right: 16px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  backdrop-filter: blur(14px);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 0 20px var(--cyan-glow);
-  max-height: 130px;
-  overflow: hidden;
-}
-
-.transcript-line {
-  font-size: 0.78rem;
-  line-height: 1.5;
-  letter-spacing: 0.04em;
-  min-height: 1.2em;
-  transition: all 0.3s ease;
-}
-
-.user-line::before {
-  content: '▶ VOUS  ';
-  color: var(--cyan);
-  font-weight: 600;
-}
-
-.agent-line::before {
-  content: '◈ AGENT ';
-  color: #b07dff;
-  font-weight: 600;
-}
-
-.agent-line {
-  color: #ddc8ff;
 }
 
 /* ── AR Button Container ──────────────────────── */
@@ -316,10 +180,18 @@ html, body {
   white-space: nowrap;
 }
 
+/* ── ElevenLabs Widget ────────────────────────── */
+elevenlabs-convai {
+  position: fixed;
+  bottom: 24px;
+  left: 20px;
+  z-index: 100;
+}
+
 /* ── Utility ──────────────────────────────────── */
 .hidden { display: none !important; }
 
-/* ── Scanline FX (subtil) ─────────────────────── */
+/* ── Scanline FX ──────────────────────────────── */
 body::after {
   content: '';
   position: fixed;
@@ -335,7 +207,7 @@ body::after {
   z-index: 999;
 }
 
-/* ── Corner decorations ───────────────────────── */
+/* ── Corner decoration ────────────────────────── */
 body::before {
   content: '';
   position: fixed;
@@ -347,3 +219,4 @@ body::before {
   pointer-events: none;
   z-index: 999;
 }
+
