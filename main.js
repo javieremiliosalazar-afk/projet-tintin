@@ -48,14 +48,14 @@ function init() {
     arOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
     document.body.appendChild(arOverlay);
 
-    // Bouton AR
+    // Bouton AR — ajouté dans la landing-page pour qu'il soit visible
     const arButton = ARButton.createButton(renderer, {
         requiredFeatures: ['hit-test'],
         optionalFeatures: ['dom-overlay'],
         domOverlay: { root: arOverlay }
     });
-    arButton.style.zIndex = '99999';
     document.getElementById('landing-page').appendChild(arButton);
+
 
     // Bouton Parler
     const speakBtn = document.createElement('div');
