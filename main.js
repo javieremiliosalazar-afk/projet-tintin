@@ -17,7 +17,6 @@ let mixer = null;
 let animationAction = null;
 const clock = new THREE.Clock();
 
-let modelPlaced = false;
 let arOverlay = null;
 
 init();
@@ -78,6 +77,7 @@ function init() {
 
     speakBtn.addEventListener('click', onSpeakClick);
     speakBtn.addEventListener('touchend', (e) => { e.preventDefault(); onSpeakClick(); }, { passive: false });
+    speakBtn.addEventListener('beforexrselect', (e) => e.preventDefault());
 
     // Widget ElevenLabs
     const widgetContainer = document.createElement('div');
@@ -93,6 +93,7 @@ function init() {
 
     // ⚠️ Remplace YOUR_AGENT_ID par ton vrai Agent ID ElevenLabs
     widgetContainer.innerHTML = `<elevenlabs-convai agent-id="YOUR_AGENT_ID"></elevenlabs-convai>`;
+    widgetContainer.addEventListener('beforexrselect', (e) => e.preventDefault());
     arOverlay.appendChild(widgetContainer);
 
     // Charge le script ElevenLabs
@@ -113,7 +114,6 @@ function init() {
         if (currentModel) { scene.remove(currentModel); currentModel = null; }
         document.getElementById('speak-btn').style.display = 'none';
         document.getElementById('el-widget').style.display = 'none';
-        modelPlaced = false;
     });
 
     // ==========================================
@@ -188,12 +188,9 @@ function onSelect() {
 
             if (animationAction) animationAction.play();
 
-            if (!modelPlaced) {
-                modelPlaced = true;
-                setTimeout(() => {
-                    document.getElementById('speak-btn').style.display = 'block';
-                }, 2000);
-            }
+            setTimeout(() => {
+                document.getElementById('speak-btn').style.display = 'block';
+            }, 2000);
         }
 
         currentModel.position.setFromMatrixPosition(reticle.matrix);
@@ -247,6 +244,10 @@ function render(timestamp, frame) {
             }
         }
     }
+
+    renderer.render(scene, camera);
+}
+
 
     renderer.render(scene, camera);
 }
