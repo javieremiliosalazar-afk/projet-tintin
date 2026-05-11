@@ -6,17 +6,21 @@ import { ARButton } from 'three/addons/webxr/ARButton.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 let camera, scene, renderer;
-let reticle; 
-let hitTestSource = null; 
+let reticle;
+let hitTestSource = null;
 let hitTestSourceRequested = false;
 
-let modelToPlace = null; 
-let currentModel = null; 
+let modelToPlace = null;
+let currentModel = null;
 
 // Variables pour l'animation
-let mixer = null; 
-let animationAction = null; 
-const clock = new THREE.Clock(); 
+let mixer = null;
+let animationAction = null;
+const clock = new THREE.Clock();
+
+// Variables pour la bulle et le widget
+let speakBubbleTimer = null;
+let modelPlaced = false;
 
 init();
 animate();
@@ -28,7 +32,7 @@ function init() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-    const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 2); 
+    const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 2);
     light.position.set(0.5, 1, 0.25);
     scene.add(light);
 
@@ -38,7 +42,7 @@ function init() {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.xr.enabled = true; 
+    renderer.xr.enabled = true;
     document.body.appendChild(renderer.domElement);
 
     // Création du bouton AR
@@ -46,63 +50,61 @@ function init() {
 
     // --- GESTION DE LA LANDING PAGE BD ---
     renderer.xr.addEventListener('sessionstart', () => {
-        // Quand l'AR démarre, on cache la page d'accueil
         const landingPage = document.getElementById('landing-page');
-        if(landingPage) landingPage.style.display = 'none';
+        if (landingPage) landingPage.style.display = 'none';
     });
 
     renderer.xr.addEventListener('sessionend', () => {
-        // Quand on quitte l'AR, on réaffiche la page d'accueil
         const landingPage = document.getElementById('landing-page');
-        if(landingPage) landingPage.style.display = 'flex';
-        
-        // Nettoyage de la scène
+        if (landingPage) landingPage.style.display = 'flex';
+
         if (currentModel) {
             scene.remove(currentModel);
             currentModel = null;
         }
+
+        // Réinitialise la bulle et le widget à la fin de la session AR
+        hideSpeakBubble();
+        hideElevenLabsWidget();
+        modelPlaced = false;
+        if (speakBubbleTimer) clearTimeout(speakBubbleTimer);
     });
 
-// ==========================================
+    // ==========================================
     // 4. CHARGEMENT ET RECADRAGE DU MODÈLE 3D
     // ==========================================
     const loader = new GLTFLoader();
     loader.load(
-        '2.glb', 
+        '2.glb',
         function (gltf) {
             const rawModel = gltf.scene;
 
             const box = new THREE.Box3().setFromObject(rawModel);
             const size = box.getSize(new THREE.Vector3());
 
-            // 1. MODIFICATION DE LA TAILLE : On passe de 0.8 à 0.5 (50 cm)
-            const targetHeight = 0.25; 
+            const targetHeight = 0.25;
             const scaleFactor = targetHeight / size.y;
             rawModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
             const scaledBox = new THREE.Box3().setFromObject(rawModel);
             const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
 
-            // 2. MODIFICATION DU NIVEAU DU SOL
-            // Si la géométrie invisible de Tintin le fait flotter, on le descend manuellement.
-            // Une valeur négative l'enfonce dans le sol. Ajuste cette valeur (ex: -0.05, -0.1)
-            const decalageSol = -0.035; // Commence par -2cm
+            const decalageSol = -0.035;
 
             rawModel.position.x = -scaledCenter.x;
-            rawModel.position.y = -scaledBox.min.y + decalageSol; // Ajout du décalage ici
+            rawModel.position.y = -scaledBox.min.y + decalageSol;
             rawModel.position.z = -scaledCenter.z;
 
             modelToPlace = new THREE.Group();
             modelToPlace.add(rawModel);
-            
-            // Préparation de l'animation
+
             if (gltf.animations && gltf.animations.length > 0) {
                 mixer = new THREE.AnimationMixer(rawModel);
                 animationAction = mixer.clipAction(gltf.animations[0]);
                 console.log("Animation trouvée et prête !");
             }
 
-            console.log("Modèle chargé, réduit à 50cm et ajusté au sol !");
+            console.log("Modèle chargé, réduit à 25cm et ajusté au sol !");
         },
         undefined,
         function (error) {
@@ -128,27 +130,211 @@ function init() {
     scene.add(controller);
 
     window.addEventListener('resize', onWindowResize);
+
+    // ==========================================
+    // 7. INITIALISATION DE LA BULLE ET DU WIDGET
+    // ==========================================
+    setupSpeakBubble();
+    setupElevenLabsWidget();
 }
 
-// Fonction appelée quand on touche l'écran
+// ==========================================
+// BULLE "PARLER" — SETUP
+// ==========================================
+function setupSpeakBubble() {
+    // Crée la bulle si elle n'existe pas encore dans le DOM
+    if (document.getElementById('speak-bubble')) return;
+
+    const bubble = document.createElement('div');
+    bubble.id = 'speak-bubble';
+    bubble.innerHTML = `
+        <span class="bubble-icon">💬</span>
+        <span class="bubble-label">Parler</span>
+    `;
+    bubble.style.cssText = `
+        display: none;
+        position: fixed;
+        bottom: 120px;
+        left: 50%;
+        transform: translateX(-50%) scale(0.8);
+        background: #ffffff;
+        color: #1a1a2e;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        font-weight: 700;
+        font-size: 18px;
+        padding: 14px 28px;
+        border-radius: 50px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
+        cursor: pointer;
+        z-index: 9999;
+        align-items: center;
+        gap: 10px;
+        opacity: 0;
+        transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+        border: 3px solid #e8e8e8;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        min-width: 140px;
+        justify-content: center;
+        white-space: nowrap;
+    `;
+
+    // Styles pour les enfants inline
+    const icon = bubble.querySelector('.bubble-icon');
+    icon.style.cssText = 'font-size: 22px; line-height: 1;';
+
+    const label = bubble.querySelector('.bubble-label');
+    label.style.cssText = 'letter-spacing: 0.5px;';
+
+    // Effet de pulsation pour attirer l'attention
+    const pulseStyle = document.createElement('style');
+    pulseStyle.textContent = `
+        @keyframes bubblePulse {
+            0%, 100% { box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 0 0 rgba(255,255,255,0.5); }
+            50% { box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 0 12px rgba(255,255,255,0); }
+        }
+        #speak-bubble.visible {
+            animation: bubblePulse 2s ease-in-out infinite;
+        }
+        #speak-bubble:active {
+            transform: translateX(-50%) scale(0.93) !important;
+        }
+    `;
+    document.head.appendChild(pulseStyle);
+
+    document.body.appendChild(bubble);
+
+    // Clic sur la bulle → ouvre le widget ElevenLabs
+    bubble.addEventListener('click', () => {
+        toggleElevenLabsWidget();
+    });
+
+    // Fallback tactile (pour certains navigateurs mobile en WebXR)
+    bubble.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        toggleElevenLabsWidget();
+    }, { passive: false });
+}
+
+function showSpeakBubble() {
+    const bubble = document.getElementById('speak-bubble');
+    if (!bubble) return;
+    bubble.style.display = 'flex';
+    // Déclenche la transition après affichage
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            bubble.style.opacity = '1';
+            bubble.style.transform = 'translateX(-50%) scale(1)';
+            bubble.classList.add('visible');
+        });
+    });
+}
+
+function hideSpeakBubble() {
+    const bubble = document.getElementById('speak-bubble');
+    if (!bubble) return;
+    bubble.style.opacity = '0';
+    bubble.style.transform = 'translateX(-50%) scale(0.8)';
+    bubble.classList.remove('visible');
+    setTimeout(() => { bubble.style.display = 'none'; }, 400);
+}
+
+// ==========================================
+// WIDGET ELEVENLABS — SETUP
+// ==========================================
+function setupElevenLabsWidget() {
+    if (document.getElementById('el-widget-container')) return;
+
+    // Charge le script ElevenLabs une seule fois
+    if (!document.getElementById('elevenlabs-script')) {
+        const script = document.createElement('script');
+        script.id = 'elevenlabs-script';
+        script.src = 'https://elevenlabs.io/convai-widget/index.js';
+        script.async = true;
+        document.head.appendChild(script);
+    }
+
+    // Conteneur du widget
+    const container = document.createElement('div');
+    container.id = 'el-widget-container';
+    container.style.cssText = `
+        display: none;
+        position: fixed;
+        bottom: 100px;
+        right: 20px;
+        z-index: 10000;
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+        transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    `;
+
+    // ⚠️ REMPLACE "YOUR_AGENT_ID" par ton vrai Agent ID ElevenLabs
+    const widget = document.createElement('elevenlabs-convai');
+    widget.setAttribute('agent-id', "agent_6201kncf8mfdey5s99wfnbgp952a");
+    container.appendChild(widget);
+
+    document.body.appendChild(container);
+}
+
+function showElevenLabsWidget() {
+    const container = document.getElementById('el-widget-container');
+    if (!container) return;
+    container.style.display = 'block';
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            container.style.opacity = '1';
+            container.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+}
+
+function hideElevenLabsWidget() {
+    const container = document.getElementById('el-widget-container');
+    if (!container) return;
+    container.style.opacity = '0';
+    container.style.transform = 'translateY(20px) scale(0.95)';
+    setTimeout(() => { container.style.display = 'none'; }, 350);
+}
+
+function toggleElevenLabsWidget() {
+    const container = document.getElementById('el-widget-container');
+    if (!container) return;
+    if (container.style.display === 'none' || container.style.display === '') {
+        showElevenLabsWidget();
+    } else {
+        hideElevenLabsWidget();
+    }
+}
+
+// ==========================================
+// FONCTION APPELÉE QUAND ON TOUCHE L'ÉCRAN
+// ==========================================
 function onSelect() {
     if (reticle.visible && modelToPlace) {
-        
+
         // Au tout premier clic
         if (!currentModel) {
-            currentModel = modelToPlace; 
+            currentModel = modelToPlace;
             scene.add(currentModel);
-            
-            // On active l'animation
+
             if (animationAction) {
                 animationAction.play();
             }
+
+            // Affiche la bulle 2 secondes après l'apparition du modèle
+            if (!modelPlaced) {
+                modelPlaced = true;
+                if (speakBubbleTimer) clearTimeout(speakBubbleTimer);
+                speakBubbleTimer = setTimeout(() => {
+                    showSpeakBubble();
+                }, 2000);
+            }
         }
-        
-        // On déplace le modèle sur le cercle vert
+
+        // Déplace le modèle sur le cercle vert
         currentModel.position.setFromMatrixPosition(reticle.matrix);
-        
-        // On le fait regarder vers la caméra
+
+        // Le fait regarder vers la caméra
         const lookPos = new THREE.Vector3(camera.position.x, currentModel.position.y, camera.position.z);
         currentModel.lookAt(lookPos);
     }
@@ -165,13 +351,12 @@ function animate() {
 }
 
 // ==========================================
-// 7. BOUCLE DE RENDU ET CALCUL DU SOL
+// BOUCLE DE RENDU ET CALCUL DU SOL
 // ==========================================
 function render(timestamp, frame) {
-    // Mise à jour de l'animation à chaque image
-    const delta = clock.getDelta(); 
+    const delta = clock.getDelta();
     if (mixer) {
-        mixer.update(delta); 
+        mixer.update(delta);
     }
 
     if (frame) {
