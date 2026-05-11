@@ -55,7 +55,7 @@ function init() {
         domOverlay: { root: arOverlay }
     });
     arButton.style.zIndex = '99999';
-    document.body.appendChild(arButton);
+    document.getElementById('landing-page').appendChild(arButton);
 
     // Bouton Parler
     const speakBtn = document.createElement('div');
