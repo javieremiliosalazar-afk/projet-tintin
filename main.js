@@ -45,15 +45,17 @@ function init() {
     arOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
     document.body.appendChild(arOverlay);
 
-    // Bouton AR
-const arButton = ARButton.createButton(renderer, {
-    requiredFeatures: ['hit-test'],
-    optionalFeatures: ['dom-overlay'],
-    domOverlay: { root: arOverlay }
-});
-arButton.style.zIndex = '99999';
-document.body.appendChild(arButton);
-    }));
+   // ==========================================
+    // 3. PARAMÉTRAGE DU RENDU WEBXR
+    // ==========================================
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true; 
+    document.body.appendChild(renderer.domElement);
+
+    // Création du bouton AR
+    document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
 
     // Bouton Parler
     const speakBtn = document.createElement('div');
@@ -95,7 +97,7 @@ document.body.appendChild(arButton);
     `;
 
     // ⚠️ Remplace YOUR_AGENT_ID par ton vrai Agent ID ElevenLabs
-    widgetContainer.innerHTML = `<elevenlabs-convai agent-id="YOUR_AGENT_ID"></elevenlabs-convai>`;
+    widgetContainer.innerHTML = `<elevenlabs-convai agent-id="agent_6201kncf8mfdey5s99wfnbgp952a"></elevenlabs-convai>`;
     widgetContainer.addEventListener('beforexrselect', (e) => e.preventDefault());
     arOverlay.appendChild(widgetContainer);
 
