@@ -46,8 +46,11 @@ function init() {
     document.body.appendChild(renderer.domElement);
 
     // Création du bouton AR
-    document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
-
+document.body.appendChild(ARButton.createButton(renderer, {
+    requiredFeatures: ['hit-test'],
+    optionalFeatures: ['dom-overlay'],
+    domOverlay: { root: document.body }
+}));
     // --- GESTION DE LA LANDING PAGE BD ---
     renderer.xr.addEventListener('sessionstart', () => {
         const landingPage = document.getElementById('landing-page');
