@@ -46,10 +46,13 @@ function init() {
     document.body.appendChild(arOverlay);
 
     // Bouton AR
-    document.body.appendChild(ARButton.createButton(renderer, {
-        requiredFeatures: ['hit-test'],
-        optionalFeatures: ['dom-overlay'],
-        domOverlay: { root: arOverlay }
+const arButton = ARButton.createButton(renderer, {
+    requiredFeatures: ['hit-test'],
+    optionalFeatures: ['dom-overlay'],
+    domOverlay: { root: arOverlay }
+});
+arButton.style.zIndex = '99999';
+document.body.appendChild(arButton);
     }));
 
     // Bouton Parler
